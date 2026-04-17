@@ -45,7 +45,7 @@ function Sidebar({
         <img src="/logo.png" alt="Digital Curator" style={{ width: 36, height: 36, borderRadius: '8px' }} />
         <div>
           <span className="eyebrow" style={{ marginBottom: 0 }}>Mono Indigo</span>
-          <h2 style={{ fontSize: '1.25rem' }}>The Digital Curator</h2>
+          <h2 style={{ fontSize: '1.25rem' }}>The Digital Curator ✦</h2>
         </div>
         <button className="sidebar-close" onClick={onClose} type="button">
           {isTr ? 'Kapat' : 'Close'}
