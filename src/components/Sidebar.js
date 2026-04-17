@@ -142,13 +142,19 @@ function Sidebar({
           <strong>{theme === 'light' ? (isTr ? 'Açık' : 'On') : (isTr ? 'Kapalı' : 'Off')}</strong>
         </button>
 
-        <button className="theme-toggle" onClick={toggleLang} type="button">
+        <button className="theme-toggle" onClick={toggleLang} type="button" style={{ marginBottom: '0.5rem' }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Globe size={16} className="lucide-icon" /> 
             {isTr ? 'Dil' : 'Language'}
           </span>
           <strong>{isTr ? 'Türkçe' : 'English'}</strong>
         </button>
+
+        {onSignOut && (
+          <button className="theme-toggle" onClick={onSignOut} type="button" style={{ color: 'var(--red)', borderTop: '1px solid var(--border)', paddingTop: '0.8rem', borderRadius: 0, justifyContent: 'center' }}>
+            <span style={{ fontWeight: 600 }}>{isTr ? 'Hesapı Kapat (Çıkış)' : 'Log Out'}</span>
+          </button>
+        )}
       </div>
     </aside>
   );

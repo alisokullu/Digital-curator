@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Mail, Lock, LogIn, UserPlus } from 'lucide-react';
+import { Mail, Lock, LogIn, UserPlus, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { isTr } from '../utils/i18n';
 
@@ -7,6 +7,8 @@ function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -24,6 +26,12 @@ function AuthScreen() {
     setLoading(true);
 
     try {
+      if (!isLogin && password !== confirmPassword) {
+        setTransientMessage(setError, isTr ? 'Şifreler eşleşmiyor!' : 'Passwords do not match!');
+        setLoading(false);
+        return;
+      }
+
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({
           email,
@@ -87,14 +95,35 @@ function AuthScreen() {
           <div className="input-group">
             <Lock size={18} className="input-icon" />
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder={isTr ? 'Şifre' : 'Password'}
               required
               minLength={6}
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              style={{ position: 'absolute', right: '1rem', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0, display: 'flex' }}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
+
+          {!isLogin && (
+            <div className="input-group">
+              <Lock size={18} className="input-icon" />
+              <input
+                type={showPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder={isTr ? 'Şifreyi Tekrar Girin' : 'Confirm Password'}
+                required
+                minLength={6}
+              />
+            </div>
+          )}
 
           <button type="submit" disabled={loading} className="auth-submit btn-primary">
             {loading ? (isTr ? 'Bekleniyor...' : 'Processing...') : (
