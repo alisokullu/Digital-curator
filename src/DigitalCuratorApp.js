@@ -206,6 +206,8 @@ function DigitalCuratorApp() {
     const remaining = active.filter((task) => !task.is_completed).length;
     const archived = allTasks.filter((task) => task.is_archived).length;
     const completionRate = active.length ? Math.round((completed / active.length) * 100) : 0;
+    const totalRoutines = active.filter((task) => task.recurrence && task.recurrence !== 'none').length;
+
     const byFolder = folders.map((folder) => {
       const folderTasks = allTasks.filter((task) => task.folder_id === folder.id && !task.is_archived);
       const folderCompleted = folderTasks.filter((task) => task.is_completed).length;
@@ -226,6 +228,7 @@ function DigitalCuratorApp() {
       remaining,
       archived,
       completionRate,
+      totalRoutines,
       byFolder,
     };
   }, [allTasks, folders]);

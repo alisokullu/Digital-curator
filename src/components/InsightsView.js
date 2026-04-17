@@ -14,6 +14,7 @@ function InsightsView({ activeFolder, folders, stats }) {
     <section className="insights-view">
       <div className="stats-grid">
         <StatCard label={isTr ? "Tamamlama oranı" : "Completion rate"} tone="brand" value={`${stats.completionRate}%`} />
+        <StatCard label={isTr ? "Aktif rutinler" : "Active routines"} value={stats.totalRoutines} />
         <StatCard label={isTr ? "Aktif görevler" : "Active tasks"} value={stats.active} />
         <StatCard label={isTr ? "Tamamlandı" : "Completed"} value={stats.completed} />
         <StatCard label={isTr ? "Arşivlendi" : "Archived"} tone="muted" value={stats.archived} />

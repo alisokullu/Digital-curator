@@ -78,6 +78,9 @@ function TaskCard({
                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--brand)', fontWeight: 500 }}>
                   <Repeat size={12} />
                   {task.recurrence === 'daily' ? (isTr ? 'Günlük Rutin' : 'Daily') : task.recurrence === 'weekly' ? (isTr ? 'Haftalık Rutin' : 'Weekly') : (isTr ? 'Aylık Rutin' : 'Monthly')}
+                  <span style={{ opacity: 0.6, fontSize: '0.85em', marginLeft: '0.2rem' }}>
+                    ({isTr ? 'Başlangıç:' : 'Since'} {new Date(task.created_at).toLocaleDateString(isTr ? 'tr-TR' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' })})
+                  </span>
                 </span>
               )}
             </div>
