@@ -117,21 +117,41 @@ function DigitalCuratorApp() {
       nextTasks.forEach(task => {
         if (task.is_completed && task.recurrence && task.recurrence !== 'none') {
           const updated = new Date(task.updated_at);
+          const created = new Date(task.created_at);
           
-          const updatedDayMidnight = new Date(updated);
-          updatedDayMidnight.setHours(0, 0, 0, 0);
-
-          let nextResetTime = new Date(updatedDayMidnight);
+          let nextResetTime = null;
 
           if (task.recurrence === 'daily') {
+            const updatedDayMidnight = new Date(updated);
+            updatedDayMidnight.setHours(0, 0, 0, 0);
+            nextResetTime = new Date(updatedDayMidnight);
             nextResetTime.setDate(updatedDayMidnight.getDate() + 1);
           } else if (task.recurrence === 'weekly') {
-            nextResetTime.setDate(updatedDayMidnight.getDate() + 7);
+            const createdDayMidnight = new Date(created);
+            createdDayMidnight.setHours(0, 0, 0, 0);
+            
+            const diffTime = updated.getTime() - createdDayMidnight.getTime();
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            const weeksPassed = Math.floor(diffDays / 7);
+            
+            nextResetTime = new Date(createdDayMidnight);
+            nextResetTime.setDate(createdDayMidnight.getDate() + ((weeksPassed + 1) * 7));
           } else if (task.recurrence === 'monthly') {
-            nextResetTime.setMonth(updatedDayMidnight.getMonth() + 1);
+            const createdDayMidnight = new Date(created);
+            createdDayMidnight.setHours(0, 0, 0, 0);
+
+            let monthsPassed = (updated.getFullYear() - createdDayMidnight.getFullYear()) * 12 + (updated.getMonth() - createdDayMidnight.getMonth());
+            
+            // Adjust if updated is earlier in the month than created
+            if (updated.getDate() < createdDayMidnight.getDate()) {
+               monthsPassed -= 1;
+            }
+            
+            nextResetTime = new Date(createdDayMidnight);
+            nextResetTime.setMonth(createdDayMidnight.getMonth() + monthsPassed + 1);
           }
 
-          if (now >= nextResetTime) {
+          if (nextResetTime && now >= nextResetTime) {
             routineUpdates.push(task.id);
           }
         }
