@@ -30,6 +30,7 @@ function Sidebar({
   onViewChange,
   theme,
   view,
+  onSignOut,
 }) {
   const lang = localStorage.getItem('digital-curator-lang') || 'tr';
   const isTr = lang === 'tr';

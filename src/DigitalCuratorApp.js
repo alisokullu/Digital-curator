@@ -6,6 +6,7 @@ import InsightsView from './components/InsightsView';
 import Sidebar from './components/Sidebar';
 import TaskComposer from './components/TaskComposer';
 import TaskList from './components/TaskList';
+import AuthScreen from './components/AuthScreen';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 
 const VIEWS = {
@@ -37,6 +38,23 @@ function DigitalCuratorApp() {
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [editingDraft, setEditingDraft] = useState({ title: '', description: '' });
   const [searchTerm, setSearchTerm] = useState('');
+  const [session, setSession] = useState(null);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+    
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -56,7 +74,7 @@ function DigitalCuratorApp() {
   }, [activeFolderId]);
 
   useEffect(() => {
-    if (!isSupabaseConfigured) {
+    if (!isSupabaseConfigured || !session) {
       setLoading(false);
       return undefined;
     }
@@ -123,7 +141,7 @@ function DigitalCuratorApp() {
       cancelled = true;
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [session]);
 
   const activeFolder = useMemo(
     () => folders.find((folder) => folder.id === activeFolderId) || null,
@@ -235,7 +253,7 @@ function DigitalCuratorApp() {
     }
 
     const result = await runMutation(
-      () => supabase.from('folders').insert([{ name }]).select().single(),
+      () => supabase.from('folders').insert([{ name, user_id: session.user.id }]).select().single(),
       isTr ? 'Klasör oluşturuldu.' : 'Folder created.'
     );
 
@@ -292,6 +310,7 @@ function DigitalCuratorApp() {
       is_completed: false,
       is_archived: false,
       updated_at: stamp(),
+      user_id: session.user.id,
     };
 
     const result = await runMutation(
@@ -522,6 +541,10 @@ REACT_APP_SUPABASE_ANON_KEY=your-anon-key`}</pre>
     );
   };
 
+  if (!session && isSupabaseConfigured) {
+    return <AuthScreen />;
+  }
+
   return (
     <div className="app-shell">
       <Sidebar
@@ -546,6 +569,7 @@ REACT_APP_SUPABASE_ANON_KEY=your-anon-key`}</pre>
           setView(nextView);
           setIsSidebarOpen(false);
         }}
+        onSignOut={() => supabase.auth.signOut()}
         theme={theme}
         view={view}
       />
