@@ -1,5 +1,6 @@
 import { formatDateTime } from '../utils/formatters';
 import { isTr } from '../utils/i18n';
+import { Repeat } from 'lucide-react';
 
 function TaskCard({
   editingDraft,
@@ -73,6 +74,12 @@ function TaskCard({
             <div className="task-meta">
               <span>{task.is_completed ? (isTr ? 'Tamamlandı' : 'Completed') : (isTr ? 'Devam ediyor' : 'In progress')}</span>
               <span>{formatDateTime(task.updated_at || task.created_at)}</span>
+              {task.recurrence && task.recurrence !== 'none' && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--brand)', fontWeight: 500 }}>
+                  <Repeat size={12} />
+                  {task.recurrence === 'daily' ? (isTr ? 'Günlük Rutin' : 'Daily') : task.recurrence === 'weekly' ? (isTr ? 'Haftalık Rutin' : 'Weekly') : (isTr ? 'Aylık Rutin' : 'Monthly')}
+                </span>
+              )}
             </div>
           </>
         )}

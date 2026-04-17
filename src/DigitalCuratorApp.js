@@ -34,7 +34,7 @@ function DigitalCuratorApp() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isAddingFolder, setIsAddingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
-  const [draftTask, setDraftTask] = useState({ title: '', description: '' });
+  const [draftTask, setDraftTask] = useState({ title: '', description: '', recurrence: 'none' });
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [editingDraft, setEditingDraft] = useState({ title: '', description: '' });
   const [searchTerm, setSearchTerm] = useState('');
@@ -110,6 +110,29 @@ function DigitalCuratorApp() {
 
       const nextFolders = folderResponse.data || [];
       const nextTasks = taskResponse.data || [];
+
+      // Routine Automation Engine
+      const now = new Date();
+      const routineUpdates = [];
+      nextTasks.forEach(task => {
+        if (task.is_completed && task.recurrence && task.recurrence !== 'none') {
+          const updated = new Date(task.updated_at);
+          const diffHours = (now - updated) / (1000 * 60 * 60);
+
+          let shouldReset = false;
+          if (task.recurrence === 'daily' && diffHours >= 24) shouldReset = true;
+          if (task.recurrence === 'weekly' && diffHours >= (24 * 7)) shouldReset = true;
+          if (task.recurrence === 'monthly' && diffHours >= (24 * 30)) shouldReset = true;
+
+          if (shouldReset) {
+            routineUpdates.push(task.id);
+          }
+        }
+      });
+
+      if (routineUpdates.length > 0) {
+        supabase.from('tasks').update({ is_completed: false, updated_at: now.toISOString() }).in('id', routineUpdates).then();
+      }
 
       setFolders(nextFolders);
       setAllTasks(nextTasks);
@@ -311,6 +334,7 @@ function DigitalCuratorApp() {
       is_archived: false,
       updated_at: stamp(),
       user_id: session.user.id,
+      recurrence: draftTask.recurrence || 'none',
     };
 
     const result = await runMutation(
@@ -323,7 +347,7 @@ function DigitalCuratorApp() {
     }
 
     setAllTasks((current) => [result.data, ...current]);
-    setDraftTask({ title: '', description: '' });
+    setDraftTask({ title: '', description: '', recurrence: 'none' });
   };
 
   const handleToggleTask = async (task) => {
