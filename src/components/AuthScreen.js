@@ -11,6 +11,12 @@ function AuthScreen() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  const setTransientMessage = (setter, message) => {
+    setter(message);
+    window.clearTimeout(setTransientMessage.timerId);
+    setTransientMessage.timerId = window.setTimeout(() => setter(''), 4000);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -32,18 +38,18 @@ function AuthScreen() {
         if (error) throw error;
         
         if (data?.user?.identities?.length === 0) {
-          setError(isTr ? 'Bu e-posta zaten kayıtlı.' : 'This email is already registered.');
-        } else {
-          setSuccess(isTr ? 'Kayıt başarılı! Giriş yapılıyor...' : 'Signup successful! Logging in...');
+          setTransientMessage(setError, isTr ? 'Bu e-posta zaten kayıtlı.' : 'This email is already registered.');
+        } else if (!data.session) {
+          setTransientMessage(setSuccess, isTr ? 'Kayıt başarılı! Ancak Supabase e-posta onayı istiyor (Mailinize bakın veya ayarlardan Mail Onayını kapatın).' : 'Signup successful! Please confirm your email.');
         }
       }
     } catch (err) {
       if (err.message.includes('Invalid login credentials')) {
-        setError(isTr ? 'Hatalı e-posta veya şifre.' : 'Invalid email or password.');
+        setTransientMessage(setError, isTr ? 'Hatalı e-posta veya şifre.' : 'Invalid email or password.');
       } else if (err.message.includes('Password should be at least 6 characters')) {
-        setError(isTr ? 'Şifre en az 6 karakter olmalıdır.' : 'Password must be at least 6 characters.');
+        setTransientMessage(setError, isTr ? 'Şifre en az 6 karakter olmalıdır.' : 'Password must be at least 6 characters.');
       } else {
-        setError(err.message);
+        setTransientMessage(setError, err.message);
       }
     } finally {
       setLoading(false);
