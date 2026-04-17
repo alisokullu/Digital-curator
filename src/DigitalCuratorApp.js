@@ -117,14 +117,21 @@ function DigitalCuratorApp() {
       nextTasks.forEach(task => {
         if (task.is_completed && task.recurrence && task.recurrence !== 'none') {
           const updated = new Date(task.updated_at);
-          const diffHours = (now - updated) / (1000 * 60 * 60);
+          
+          const updatedDayMidnight = new Date(updated);
+          updatedDayMidnight.setHours(0, 0, 0, 0);
 
-          let shouldReset = false;
-          if (task.recurrence === 'daily' && diffHours >= 24) shouldReset = true;
-          if (task.recurrence === 'weekly' && diffHours >= (24 * 7)) shouldReset = true;
-          if (task.recurrence === 'monthly' && diffHours >= (24 * 30)) shouldReset = true;
+          let nextResetTime = new Date(updatedDayMidnight);
 
-          if (shouldReset) {
+          if (task.recurrence === 'daily') {
+            nextResetTime.setDate(updatedDayMidnight.getDate() + 1);
+          } else if (task.recurrence === 'weekly') {
+            nextResetTime.setDate(updatedDayMidnight.getDate() + 7);
+          } else if (task.recurrence === 'monthly') {
+            nextResetTime.setMonth(updatedDayMidnight.getMonth() + 1);
+          }
+
+          if (now >= nextResetTime) {
             routineUpdates.push(task.id);
           }
         }
