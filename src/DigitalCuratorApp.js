@@ -88,7 +88,7 @@ function DigitalCuratorApp() {
       }
       setError('');
 
-      const [folderResponse, taskResponse] = await Promise.all([
+      const [folderResponse, taskResponse, historyResponse] = await Promise.all([
         supabase.from('folders').select('*').order('created_at', { ascending: true }),
         supabase
           .from('tasks')
