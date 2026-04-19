@@ -1,3 +1,4 @@
+import { useState, useMemo } from 'react';
 import { isTr } from '../utils/i18n';
 
 function StatCard({ label, value, tone = 'default' }) {
@@ -9,7 +10,45 @@ function StatCard({ label, value, tone = 'default' }) {
   );
 }
 
-function InsightsView({ activeFolder, folders, stats }) {
+function InsightsView({ activeFolder, folders, stats, history = [] }) {
+  const [historyFilter, setHistoryFilter] = useState('all'); // 'all' or 'folder'
+
+  const filteredHistory = useMemo(() => {
+    if (historyFilter === 'folder' && activeFolder) {
+      return history.filter(h => h.folder_id === activeFolder.id);
+    }
+    
+    // Aggregation for 'all' mode
+    const groups = {};
+    history.forEach(item => {
+      const key = `${item.period_date}-${item.period_type}`;
+      if (!groups[key]) {
+        groups[key] = {
+          period_date: item.period_date,
+          period_type: item.period_type,
+          completed_count: 0,
+          total_count: 0,
+          isAggregate: true
+        };
+      }
+      groups[key].completed_count += item.completed_count;
+      groups[key].total_count += item.total_count;
+    });
+    
+    return Object.values(groups).sort((a, b) => new Date(b.period_date) - new Date(a.period_date));
+  }, [history, historyFilter, activeFolder]);
+
+  const getPeriodLabel = (type, date) => {
+    const d = new Date(date);
+    const options = { day: 'numeric', month: 'long' };
+    const dateStr = d.toLocaleDateString(isTr ? 'tr-TR' : 'en-US', options);
+
+    if (type === 'daily') return isTr ? `Günlük (${dateStr})` : `Daily (${dateStr})`;
+    if (type === 'weekly') return isTr ? `Haftalık (${dateStr})` : `Weekly (${dateStr})`;
+    if (type === 'monthly') return isTr ? `Aylık (${d.toLocaleDateString(isTr ? 'tr-TR' : 'en-US', { month: 'long', year: 'numeric' })})` : `Monthly (${d.toLocaleDateString(isTr ? 'tr-TR' : 'en-US', { month: 'long', year: 'numeric' })})`;
+    return dateStr;
+  };
+
   return (
     <section className="insights-view">
       <div className="stats-grid">
@@ -91,6 +130,60 @@ function InsightsView({ activeFolder, folders, stats }) {
           </div>
         </article>
       </div>
+
+      <article className="panel-card history-panel">
+        <div className="section-header">
+          <div>
+            <span className="eyebrow">{isTr ? 'Performans Akışı' : 'Performance Flow'}</span>
+            <h2>{isTr ? 'Görev Geçmişi' : 'Task History'}</h2>
+          </div>
+          <div className="filter-tabs">
+            <button 
+              className={historyFilter === 'all' ? 'active' : ''} 
+              onClick={() => setHistoryFilter('all')}
+            >
+              {isTr ? 'Hepsi' : 'All'}
+            </button>
+            <button 
+              className={historyFilter === 'folder' ? 'active' : ''} 
+              onClick={() => setHistoryFilter('folder')}
+              disabled={!activeFolder}
+            >
+              {isTr ? 'Mevcut Klasör' : 'Current Folder'}
+            </button>
+          </div>
+        </div>
+
+        <div className="history-flow">
+          {filteredHistory.length > 0 ? (
+            filteredHistory.map((item, index) => {
+              const progress = item.total_count ? Math.round((item.completed_count / item.total_count) * 100) : 0;
+              return (
+                <div className="history-item" key={`${item.period_date}-${item.period_type}-${index}`} style={{ '--delay': `${index * 0.05}s` }}>
+                  <div className="history-info">
+                    <span className="history-date">{getPeriodLabel(item.period_type, item.period_date)}</span>
+                    <span className="history-stats">
+                      {item.completed_count} / {item.total_count} {isTr ? 'Tamamlandı' : 'Completed'}
+                    </span>
+                  </div>
+                  <div className="history-progress">
+                    <div className="progress-track">
+                      <span style={{ width: `${progress}%` }} className={progress === 100 ? 'complete' : ''} />
+                    </div>
+                    <span className="progress-pct">{progress}%</span>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <p className="empty-copy">
+              {isTr 
+                ? 'Henüz geçmiş verisi yok. Periyotlar tamamlandıkça burada görünecektir.' 
+                : 'No history data yet. It will appear here as periods complete.'}
+            </p>
+          )}
+        </div>
+      </article>
     </section>
   );
 }

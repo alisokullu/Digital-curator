@@ -39,6 +39,7 @@ function DigitalCuratorApp() {
   const [editingDraft, setEditingDraft] = useState({ title: '', description: '' });
   const [searchTerm, setSearchTerm] = useState('');
   const [session, setSession] = useState(null);
+  const [history, setHistory] = useState([]);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -94,6 +95,11 @@ function DigitalCuratorApp() {
           .select('*, folders(name)')
           .order('updated_at', { ascending: false, nullsFirst: false })
           .order('created_at', { ascending: false }),
+        supabase
+          .from('task_history')
+          .select('*')
+          .order('period_date', { ascending: false })
+          .limit(100),
       ]);
 
       if (cancelled) {
@@ -102,7 +108,7 @@ function DigitalCuratorApp() {
 
       if (folderResponse.error || taskResponse.error) {
         setError(
-          formatError(folderResponse.error || taskResponse.error, 'Data could not be loaded from Supabase.')
+          formatError(folderResponse.error || taskResponse.error || historyResponse.error, 'Data could not be loaded from Supabase.')
         );
         setLoading(false);
         return;
@@ -110,52 +116,101 @@ function DigitalCuratorApp() {
 
       const nextFolders = folderResponse.data || [];
       const nextTasks = taskResponse.data || [];
+      const nextHistory = historyResponse.data || [];
 
-      // Routine Automation Engine
+      // Routine Automation Engine + History Snapshot
       const now = new Date();
       const routineUpdates = [];
+      const historySnapshots = [];
+      
+      // Group tasks by folder and recurrence to check for period transitions
+      const recurrenceGroups = {};
       nextTasks.forEach(task => {
-        if (task.is_completed && task.recurrence && task.recurrence !== 'none') {
+        if (!task.recurrence || task.recurrence === 'none') return;
+        const key = `${task.folder_id}-${task.recurrence}`;
+        if (!recurrenceGroups[key]) recurrenceGroups[key] = [];
+        recurrenceGroups[key].push(task);
+      });
+
+      Object.entries(recurrenceGroups).forEach(([key, tasks]) => {
+        const [folderId, recurrence] = key.split('-');
+        const folder = nextFolders.find(f => f.id === folderId);
+        
+        // We only need to check if AT LEAST ONE task in this group needs reset
+        // To simplify, we check the first task or just check them all.
+        // If at least one is past its reset time, the whole group's period has ended.
+        let needsReset = false;
+        let periodDateStr = '';
+
+        tasks.forEach(task => {
           const updated = new Date(task.updated_at);
           const created = new Date(task.created_at);
-          
           let nextResetTime = null;
+          let currentPeriodStart = null;
 
           if (task.recurrence === 'daily') {
-            const updatedDayMidnight = new Date(updated);
-            updatedDayMidnight.setHours(0, 0, 0, 0);
-            nextResetTime = new Date(updatedDayMidnight);
-            nextResetTime.setDate(updatedDayMidnight.getDate() + 1);
+            const lastUpdateMidnight = new Date(updated);
+            lastUpdateMidnight.setHours(0, 0, 0, 0);
+            nextResetTime = new Date(lastUpdateMidnight);
+            nextResetTime.setDate(lastUpdateMidnight.getDate() + 1);
+            currentPeriodStart = lastUpdateMidnight;
           } else if (task.recurrence === 'weekly') {
             const createdDayMidnight = new Date(created);
             createdDayMidnight.setHours(0, 0, 0, 0);
-            
             const diffTime = updated.getTime() - createdDayMidnight.getTime();
-            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-            const weeksPassed = Math.floor(diffDays / 7);
-            
+            const weeksPassed = Math.floor(Math.floor(diffTime / (1000 * 60 * 60 * 24)) / 7);
             nextResetTime = new Date(createdDayMidnight);
             nextResetTime.setDate(createdDayMidnight.getDate() + ((weeksPassed + 1) * 7));
+            currentPeriodStart = new Date(createdDayMidnight);
+            currentPeriodStart.setDate(createdDayMidnight.getDate() + (weeksPassed * 7));
           } else if (task.recurrence === 'monthly') {
             const createdDayMidnight = new Date(created);
             createdDayMidnight.setHours(0, 0, 0, 0);
-
             let monthsPassed = (updated.getFullYear() - createdDayMidnight.getFullYear()) * 12 + (updated.getMonth() - createdDayMidnight.getMonth());
-            
-            // Adjust if updated is earlier in the month than created
-            if (updated.getDate() < createdDayMidnight.getDate()) {
-               monthsPassed -= 1;
-            }
-            
+            if (updated.getDate() < createdDayMidnight.getDate()) monthsPassed -= 1;
             nextResetTime = new Date(createdDayMidnight);
             nextResetTime.setMonth(createdDayMidnight.getMonth() + monthsPassed + 1);
+            currentPeriodStart = new Date(createdDayMidnight);
+            currentPeriodStart.setMonth(createdDayMidnight.getMonth() + monthsPassed);
           }
 
           if (nextResetTime && now >= nextResetTime) {
-            routineUpdates.push(task.id);
+            needsReset = true;
+            periodDateStr = currentPeriodStart.toISOString().split('T')[0];
+            if (task.is_completed) routineUpdates.push(task.id);
+          }
+        });
+
+        if (needsReset && folder) {
+          // Check if we already recorded history for this period
+          const alreadyRecorded = nextHistory.some(h => 
+            h.folder_id === folderId && 
+            h.period_date === periodDateStr && 
+            h.period_type === recurrence
+          );
+
+          if (!alreadyRecorded) {
+            const completed = tasks.filter(t => t.is_completed).length;
+            historySnapshots.push({
+              user_id: session.user.id,
+              folder_id: folderId,
+              folder_name: folder.name,
+              period_date: periodDateStr,
+              period_type: recurrence,
+              completed_count: completed,
+              total_count: tasks.length
+            });
           }
         }
       });
+
+      if (historySnapshots.length > 0) {
+        supabase.from('task_history').insert(historySnapshots).then(() => {
+          // Refresh history locally after recording
+          supabase.from('task_history').select('*').order('period_date', { ascending: false }).limit(100)
+            .then(({ data }) => { if (data) setHistory(data); });
+        });
+      }
 
       if (routineUpdates.length > 0) {
         supabase.from('tasks').update({ is_completed: false, updated_at: now.toISOString() }).in('id', routineUpdates).then();
@@ -163,6 +218,7 @@ function DigitalCuratorApp() {
 
       setFolders(nextFolders);
       setAllTasks(nextTasks);
+      setHistory(nextHistory);
       setActiveFolderId((currentId) => {
         if (nextFolders.length === 0) {
           return null;
@@ -185,6 +241,7 @@ function DigitalCuratorApp() {
       .channel('digital-curator-db')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'folders' }, () => loadAll(false))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => loadAll(false))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'task_history' }, () => loadAll(false))
       .subscribe();
 
     return () => {
@@ -568,7 +625,7 @@ REACT_APP_SUPABASE_ANON_KEY=your-anon-key`}</pre>
     }
 
     if (view === VIEWS.INSIGHTS) {
-      return <InsightsView activeFolder={activeFolder} folders={folders} stats={stats} />;
+      return <InsightsView activeFolder={activeFolder} folders={folders} stats={stats} history={history} />;
     }
 
     return (
