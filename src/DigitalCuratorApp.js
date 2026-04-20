@@ -21,6 +21,13 @@ const formatError = (error, fallback) => error?.message || fallback;
 
 const stamp = () => new Date().toISOString();
 
+const getLocalISODate = (date = new Date()) => {
+  const d = new Date(date);
+  const z = d.getTimezoneOffset() * 60 * 1000;
+  const localDate = new Date(d.getTime() - z);
+  return localDate.toISOString().split('T')[0];
+};
+
 function DigitalCuratorApp() {
   const [view, setView] = useState(() => localStorage.getItem('dc-last-view') || VIEWS.TASKS);
   const [theme, setTheme] = useState(() => localStorage.getItem(THEME_KEY) || 'light');
@@ -176,8 +183,8 @@ function DigitalCuratorApp() {
 
           if (nextResetTime && now >= nextResetTime) {
             needsReset = true;
-            periodDateStr = currentPeriodStart.toISOString().split('T')[0];
-            if (task.is_completed) routineUpdates.push(task.id);
+            periodDateStr = getLocalISODate(currentPeriodStart);
+            routineUpdates.push(task.id);
           }
         });
 
