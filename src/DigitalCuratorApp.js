@@ -134,16 +134,19 @@ function DigitalCuratorApp() {
       const recurrenceGroups = {};
       nextTasks.forEach(task => {
         if (!task.recurrence || task.recurrence === 'none' || task.is_archived) return;
-        const key = `${task.folder_id}-${task.recurrence}`;
+        const key = `${task.folder_id}:::${task.recurrence}`;
         if (!recurrenceGroups[key]) recurrenceGroups[key] = [];
         recurrenceGroups[key].push(task);
       });
 
       Object.entries(recurrenceGroups).forEach(([key, tasks]) => {
-        const [folderId, recurrence] = key.split('-');
+        const [folderId, recurrence] = key.split(':::');
         const folder = nextFolders.find(f => f.id === folderId);
         
-        // We only need to check if AT LEAST ONE task in this group needs reset
+        if (!folder) {
+          console.warn(`[Automation] Folder not found for tasks in group: ${key}. Snapshot skipped.`);
+          return;
+        }
         // To simplify, we check the first task or just check them all.
         // If at least one is past its reset time, the whole group's period has ended.
         let needsReset = false;
@@ -209,10 +212,15 @@ function DigitalCuratorApp() {
       });
 
       if (historySnapshots.length > 0) {
-        supabase.from('task_history').insert(historySnapshots).then(() => {
-          // Refresh history locally after recording
-          supabase.from('task_history').select('*').order('period_date', { ascending: false }).limit(100)
-            .then(({ data }) => { if (data) setHistory(data); });
+        supabase.from('task_history').insert(historySnapshots).then(({ error }) => {
+          if (error) {
+            console.error('[Automation] History snapshot insertion failed:', error);
+          } else {
+            console.log(`[Automation] Recorded ${historySnapshots.length} history snapshots.`);
+            // Refresh history locally after recording
+            supabase.from('task_history').select('*').order('period_date', { ascending: false }).limit(100)
+              .then(({ data }) => { if (data) setHistory(data); });
+          }
         });
       }
 
