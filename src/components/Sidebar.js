@@ -9,8 +9,9 @@ const NAV_ITEMS = [
 
 const getFolderIcon = (name) => {
   const n = (name || '').trim().toLowerCase();
+  // Robust matching for "Günlük" with Turkish and ASCII variants
   if (/work|iş|is/i.test(n)) return Briefcase;
-  if (/daily|günlük|gunluk|rutin|today|bugün/i.test(n)) return Calendar;
+  if (/daily|günlük|gunluk|rutin|today|bugün|bugun|günkü|gunku/i.test(n)) return Calendar;
   if (/personal|kişisel|kisisel/i.test(n)) return CheckSquare;
   if (/global|genel|ev|home/i.test(n)) return Globe;
   return Folder;
@@ -148,8 +149,14 @@ function Sidebar({
                         onClick={() => onOpenFolder(folder.id)}
                         type="button"
                       >
-                        <FolderIcon size={18} className="lucide-icon" />
-                        <span>{folder.name}</span>
+                        <FolderIcon 
+                          size={18} 
+                          className="lucide-icon folder-icon-graphic" 
+                          style={{ minWidth: '18px', display: 'inline-block', flexShrink: 0 }}
+                        />
+                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {folder.name.trim()}
+                        </span>
                       </button>
                       <div className="folder-actions" style={{ display: 'flex', gap: '0.2rem' }}>
                         <button

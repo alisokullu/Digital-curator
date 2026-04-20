@@ -292,6 +292,11 @@ textarea {
 .folder-link {
   flex: 1;
   background: transparent !important;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  overflow: hidden;
+  text-align: left;
 }
 
 .folder-actions {
@@ -1139,28 +1144,32 @@ textarea {
   }
 
   .filter-tabs {
-    width: 100%; /* Ensure it spans full width */
-    justify-content: center; /* Center the buttons */
+    width: 100%;
+    justify-content: center;
     margin: 0 auto;
-    display: inline-flex;
+    display: flex !important;
   }
 
   .filter-tabs button {
-    flex: 1; /* Make tabs equal width on mobile for symmetry */
+    flex: 1;
     padding: 0.5rem;
     font-size: 0.8rem;
   }
-  
+
   .folder-row {
-    justify-content: space-between;
-    width: 100%;
+    display: flex !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    padding-right: 0.25rem !important;
   }
 
   .folder-actions {
-    opacity: 1 !important; /* Always show actions on mobile */
+    opacity: 1 !important; 
     display: flex !important;
-    gap: 0.15rem !important; /* Extremely tight as requested */
-    margin-left: 0.5rem;
+    flex-shrink: 0 !important;
+    margin-left: auto !important; /* Forces icons to the far right */
+    gap: 0.15rem !important; /* Tightly grouped side-by-side */
+    justify-content: flex-end;
   }
   
   .folder-link {
