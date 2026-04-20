@@ -279,10 +279,10 @@ textarea {
 .folder-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: space-between;
   border-radius: 12px;
   transition: all 0.2s ease;
-  padding-right: 0.5rem;
+  padding-right: 0.25rem;
 }
 
 .folder-row:hover {
@@ -1151,9 +1151,25 @@ textarea {
     font-size: 0.8rem;
   }
   
+  .folder-row {
+    justify-content: space-between;
+    width: 100%;
+  }
+
   .folder-actions {
     opacity: 1 !important; /* Always show actions on mobile */
-    gap: 0.25rem !important; /* Tighter gap as requested */
+    display: flex !important;
+    gap: 0.15rem !important; /* Extremely tight as requested */
+    margin-left: 0.5rem;
+  }
+  
+  .folder-link {
+    flex: 0 1 auto; /* Don't force full width, let justify-content handle it */
+    min-width: 0;
+  }
+  
+  .folder-link-active {
+    flex: 0 1 auto; /* Allow the active pill to be dynamic */
   }
 
   .folder-insight-row {

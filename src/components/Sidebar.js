@@ -8,9 +8,9 @@ const NAV_ITEMS = [
 ];
 
 const getFolderIcon = (name) => {
-  const n = name || '';
+  const n = (name || '').trim().toLowerCase();
   if (/work|iş|is/i.test(n)) return Briefcase;
-  if (/daily|günlük|gunluk|rutin/i.test(n)) return Calendar;
+  if (/daily|günlük|gunluk|rutin|today|bugün/i.test(n)) return Calendar;
   if (/personal|kişisel|kisisel/i.test(n)) return CheckSquare;
   if (/global|genel|ev|home/i.test(n)) return Globe;
   return Folder;
