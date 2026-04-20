@@ -133,7 +133,7 @@ function DigitalCuratorApp() {
       // Group tasks by folder and recurrence to check for period transitions
       const recurrenceGroups = {};
       nextTasks.forEach(task => {
-        if (!task.recurrence || task.recurrence === 'none') return;
+        if (!task.recurrence || task.recurrence === 'none' || task.is_archived) return;
         const key = `${task.folder_id}-${task.recurrence}`;
         if (!recurrenceGroups[key]) recurrenceGroups[key] = [];
         recurrenceGroups[key].push(task);
