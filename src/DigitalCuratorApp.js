@@ -162,23 +162,20 @@ function DigitalCuratorApp() {
             nextResetTime.setDate(lastUpdateMidnight.getDate() + 1);
             currentPeriodStart = lastUpdateMidnight;
           } else if (task.recurrence === 'weekly') {
-            const createdDayMidnight = new Date(created);
-            createdDayMidnight.setHours(0, 0, 0, 0);
-            const diffTime = updated.getTime() - createdDayMidnight.getTime();
-            const weeksPassed = Math.floor(Math.floor(diffTime / (1000 * 60 * 60 * 24)) / 7);
-            nextResetTime = new Date(createdDayMidnight);
-            nextResetTime.setDate(createdDayMidnight.getDate() + ((weeksPassed + 1) * 7));
-            currentPeriodStart = new Date(createdDayMidnight);
-            currentPeriodStart.setDate(createdDayMidnight.getDate() + (weeksPassed * 7));
+            // Find the Monday of the week updated_at belongs to
+            const day = updated.getDay();
+            const diff = (day === 0 ? -6 : 1) - day;
+            const currentMonday = new Date(updated);
+            currentMonday.setDate(updated.getDate() + diff);
+            currentMonday.setHours(0, 0, 0, 0);
+            
+            nextResetTime = new Date(currentMonday);
+            nextResetTime.setDate(currentMonday.getDate() + 7);
+            currentPeriodStart = currentMonday;
           } else if (task.recurrence === 'monthly') {
-            const createdDayMidnight = new Date(created);
-            createdDayMidnight.setHours(0, 0, 0, 0);
-            let monthsPassed = (updated.getFullYear() - createdDayMidnight.getFullYear()) * 12 + (updated.getMonth() - createdDayMidnight.getMonth());
-            if (updated.getDate() < createdDayMidnight.getDate()) monthsPassed -= 1;
-            nextResetTime = new Date(createdDayMidnight);
-            nextResetTime.setMonth(createdDayMidnight.getMonth() + monthsPassed + 1);
-            currentPeriodStart = new Date(createdDayMidnight);
-            currentPeriodStart.setMonth(createdDayMidnight.getMonth() + monthsPassed);
+            const currentMonthFirst = new Date(updated.getFullYear(), updated.getMonth(), 1);
+            nextResetTime = new Date(updated.getFullYear(), updated.getMonth() + 1, 1);
+            currentPeriodStart = currentMonthFirst;
           }
 
           if (nextResetTime && now >= nextResetTime) {
