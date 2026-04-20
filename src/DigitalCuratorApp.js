@@ -126,7 +126,8 @@ function DigitalCuratorApp() {
       const nextHistory = historyResponse.data || [];
 
       // Routine Automation Engine + History Snapshot
-      const now = new Date();
+      // Simulation Mode: Treats 'now' as 24 hours in the future to trigger reset
+      const now = new Date(new Date().getTime() + (24 * 60 * 60 * 1000) + (10 * 60 * 1000));
       const routineUpdates = [];
       const historySnapshots = [];
       
