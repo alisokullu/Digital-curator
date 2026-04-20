@@ -1,5 +1,5 @@
 import { isTr } from '../utils/i18n';
-import { Plus, Repeat } from 'lucide-react';
+import { Plus, Repeat, Info } from 'lucide-react';
 
 function TaskComposer({ busy, draftTask, hasFolder, onChangeDraft, onSubmit }) {
   return (
@@ -38,6 +38,15 @@ function TaskComposer({ busy, draftTask, hasFolder, onChangeDraft, onSubmit }) {
               <option value="weekly">{isTr ? 'Haftalık Rutin' : 'Weekly Routine'}</option>
               <option value="monthly">{isTr ? 'Aylık Rutin' : 'Monthly Routine'}</option>
             </select>
+          </div>
+          <div className="info-tooltip-wrapper">
+            <Info size={16} className="info-icon" />
+            <div className="info-tooltip">
+              <strong>{isTr ? 'Rutin Sıfırlama Mantığı' : 'Routine Reset Logic'}</strong>
+              <p>• {isTr ? 'Günlük: Her gece 00:00' : 'Daily: Every night 00:00'}</p>
+              <p>• {isTr ? 'Haftalık: Pazartesi 00:00' : 'Weekly: Monday 00:00'}</p>
+              <p>• {isTr ? 'Aylık: Ayın 1\'i 00:00' : 'Monthly: 1st of the month 00:00'}</p>
+            </div>
           </div>
           <button 
             className="composer-submit" 
