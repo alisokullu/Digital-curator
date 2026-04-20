@@ -150,6 +150,12 @@ textarea {
   display: none;
 }
 
+@media (max-width: 640px) {
+  .topbar {
+    padding-left: 0.25rem !important; /* Move menu button closer to left edge */
+  }
+}
+
 .topbar-copy {
   max-width: 100%;
 }
@@ -1123,11 +1129,31 @@ textarea {
 
   .history-panel {
     padding: 1.25rem;
+    margin-top: 0.5rem; /* Move it higher up as per user request */
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .filter-tabs {
+    width: 100%; /* Ensure it spans full width */
+    justify-content: center; /* Center the buttons */
+    margin: 0 auto;
+    display: inline-flex;
   }
 
   .filter-tabs button {
-    padding: 0.4rem 0.75rem;
-    font-size: 0.75rem;
+    flex: 1; /* Make tabs equal width on mobile for symmetry */
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
+  
+  .folder-actions {
+    opacity: 1 !important; /* Always show actions on mobile to avoid hover confusion */
+    gap: 0.8rem !important; /* More space between buttons to avoid accidental clicks */
   }
 
   .folder-insight-row {

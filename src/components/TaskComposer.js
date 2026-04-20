@@ -27,7 +27,7 @@ function TaskComposer({ busy, draftTask, hasFolder, onChangeDraft, onSubmit }) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', alignSelf: 'flex-end', padding: '0 0.5rem 0.5rem 0' }}>
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <Repeat size={14} style={{ position: 'absolute', left: '0.5rem', color: 'var(--text-muted)' }} />
+            <Repeat size={14} style={{ position: 'absolute', left: '0.5rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
             <select
               className="composer-recurrence-select"
               value={draftTask.recurrence || 'none'}
