@@ -263,27 +263,37 @@ function DigitalCuratorApp() {
 
   const activeTasks = useMemo(
     () =>
-      allTasks.filter(
-        (task) =>
-          task.folder_id === activeFolderId &&
-          !task.is_archived &&
-          (!searchNeedle ||
-            task.title.toLowerCase().includes(searchNeedle) ||
-            (task.description || '').toLowerCase().includes(searchNeedle))
-      ),
+      allTasks
+        .filter(
+          (task) =>
+            task.folder_id === activeFolderId &&
+            !task.is_archived &&
+            (!searchNeedle ||
+              task.title.toLowerCase().includes(searchNeedle) ||
+              (task.description || '').toLowerCase().includes(searchNeedle))
+        )
+        .sort((a, b) => {
+          if (a.is_completed === b.is_completed) return 0;
+          return a.is_completed ? 1 : -1;
+        }),
     [allTasks, activeFolderId, searchNeedle]
   );
 
   const archivedTasks = useMemo(
     () =>
-      allTasks.filter(
-        (task) =>
-          task.is_archived &&
-          (!searchNeedle ||
-            task.title.toLowerCase().includes(searchNeedle) ||
-            (task.description || '').toLowerCase().includes(searchNeedle) ||
-            (task.folders?.name || '').toLowerCase().includes(searchNeedle))
-      ),
+      allTasks
+        .filter(
+          (task) =>
+            task.is_archived &&
+            (!searchNeedle ||
+              task.title.toLowerCase().includes(searchNeedle) ||
+              (task.description || '').toLowerCase().includes(searchNeedle) ||
+              (task.folders?.name || '').toLowerCase().includes(searchNeedle))
+        )
+        .sort((a, b) => {
+          if (a.is_completed === b.is_completed) return 0;
+          return a.is_completed ? 1 : -1;
+        }),
     [allTasks, searchNeedle]
   );
 
