@@ -42,10 +42,14 @@ html,
 body,
 #root {
   min-height: 100%;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 body {
   margin: 0;
+  width: 100%;
+  overflow-x: hidden;
   font-family: 'Manrope', sans-serif;
   background:
     radial-gradient(circle at top left, rgba(63, 81, 181, 0.14), transparent 28%),
@@ -73,8 +77,9 @@ textarea {
 
 .app-shell {
   display: grid;
-  grid-template-columns: 320px minmax(0, 1fr);
+  grid-template-columns: 300px minmax(0, 1fr);
   min-height: 100vh;
+  width: 100%;
 }
 
 .sidebar {
@@ -83,12 +88,13 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  min-height: 100vh;
+  height: 100vh;
   padding: 2rem 1.5rem;
   background: var(--surface);
   backdrop-filter: blur(18px);
   border-right: 1px solid var(--border);
-  z-index: 30;
+  z-index: 100;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sidebar-header,
@@ -137,6 +143,10 @@ textarea {
   display: none;
 }
 
+.topbar-copy {
+  max-width: 100%;
+}
+
 .nav-cluster,
 .folder-list,
 .task-list,
@@ -145,6 +155,7 @@ textarea {
 .focus-metrics {
   display: grid;
   gap: 0.75rem;
+  width: 100%;
 }
 
 .nav-link,
@@ -1028,20 +1039,64 @@ textarea {
 
 @media (max-width: 640px) {
   .main-panel {
-    padding: 1rem;
+    padding: 0.75rem;
+  }
+
+  .topbar {
+    padding: 1rem 0.5rem;
+    gap: 1.25rem;
+  }
+
+  .topbar-copy {
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+
+  .topbar-copy h1 {
+    font-size: 1.5rem;
+    margin-top: 0.2rem;
+  }
+
+  .topbar-copy p {
+    font-size: 0.85rem;
+    line-height: 1.4;
   }
 
   .task-card {
     grid-template-columns: auto 1fr;
+    padding: 1rem;
+    gap: 0.75rem;
   }
 
   .task-actions {
     grid-column: 2;
   }
 
-  .stats-grid,
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .stat-card {
+    padding: 1rem;
+  }
+
+  .stat-card strong {
+    font-size: 1.75rem;
+  }
+
   .insights-layout {
     grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .history-panel {
+    padding: 1.25rem;
+  }
+
+  .filter-tabs button {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.75rem;
   }
 
   .folder-insight-row {
