@@ -252,6 +252,59 @@ textarea {
   border-color: var(--border-strong);
 }
 
+.folder-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  padding-right: 0.5rem;
+}
+
+.folder-row:hover {
+  background: var(--surface-muted);
+}
+
+.folder-link {
+  flex: 1;
+  background: transparent !important;
+}
+
+.folder-actions {
+  display: flex;
+  gap: 0.25rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.folder-row:hover .folder-actions {
+  opacity: 1;
+}
+
+.folder-action-btn {
+  padding: 0.4rem;
+  border: none;
+  background: transparent;
+  color: var(--text-soft);
+  cursor: pointer;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.folder-action-btn:hover {
+  background: var(--surface-strong);
+  color: var(--brand);
+}
+
+.folder-delete:hover {
+  color: var(--red) !important;
+  background: rgba(220, 38, 38, 0.1) !important;
+}
+
+
 .sidebar-section,
 .sidebar-footer,
 .composer-card,
@@ -503,7 +556,9 @@ textarea {
 }
 
 .task-card-complete {
-  opacity: 0.78;
+  opacity: 0.55;
+  filter: grayscale(0.6);
+  transition: all 0.3s ease;
 }
 
 .task-check {
@@ -544,7 +599,8 @@ textarea {
 }
 
 .task-card-complete .task-copy h3 {
-  text-decoration: line-through;
+  /* text-decoration: line-through; -- Removed as per user request */
+  color: var(--text-soft);
 }
 
 .task-meta {

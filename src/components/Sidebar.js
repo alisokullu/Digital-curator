@@ -1,4 +1,5 @@
-import { CheckSquare, Archive as ArchiveIcon, Activity, Plus, Folder, Briefcase, Calendar, Globe, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { CheckSquare, Archive as ArchiveIcon, Activity, Plus, Folder, Briefcase, Calendar, Globe, Trash2, Edit3, Check, X } from 'lucide-react';
 
 const NAV_ITEMS = [
   { id: 'tasks', label: 'Görevler', enLabel: 'Tasks', icon: CheckSquare },
@@ -31,13 +32,29 @@ function Sidebar({
   theme,
   view,
   onSignOut,
+  onRenameFolder,
 }) {
+  const [renamingId, setRenamingId] = useState(null);
+  const [renamingValue, setRenamingValue] = useState('');
+  
   const lang = localStorage.getItem('digital-curator-lang') || 'tr';
   const isTr = lang === 'tr';
 
   const toggleLang = () => {
     localStorage.setItem('digital-curator-lang', isTr ? 'en' : 'tr');
     window.location.reload();
+  };
+
+  const handleStartRename = (e, folder) => {
+    e.stopPropagation();
+    setRenamingId(folder.id);
+    setRenamingValue(folder.name);
+  };
+
+  const handleSaveRename = (e, id) => {
+    e.preventDefault();
+    onRenameFolder(id, renamingValue);
+    setRenamingId(null);
   };
 
   return (
@@ -102,24 +119,56 @@ function Sidebar({
           {folders.length ? (
             folders.map((folder) => {
               const FolderIcon = getFolderIcon(folder.name);
+              const isRenaming = renamingId === folder.id;
+
               return (
                 <div className="folder-row" key={folder.id}>
-                  <button
-                    className={`folder-link ${activeFolderId === folder.id && view === 'tasks' ? 'folder-link-active' : ''}`}
-                    onClick={() => onOpenFolder(folder.id)}
-                    type="button"
-                  >
-                    <FolderIcon size={18} className="lucide-icon" />
-                    <span>{folder.name}</span>
-                  </button>
-                  <button
-                    aria-label={`Delete ${folder.name}`}
-                    className="folder-delete"
-                    onClick={() => onDeleteFolder(folder.id)}
-                    type="button"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  {isRenaming ? (
+                    <form className="folder-rename-form" onSubmit={(e) => handleSaveRename(e, folder.id)} style={{ flex: 1, display: 'flex', gap: '0.4rem', padding: '0.2rem' }}>
+                      <input
+                        autoFocus
+                        value={renamingValue}
+                        onChange={(e) => setRenamingValue(e.target.value)}
+                        onBlur={() => !renamingValue && setRenamingId(null)}
+                        style={{ flex: 1, padding: '0.3rem 0.6rem', fontSize: '0.85rem', borderRadius: '6px', border: '1px solid var(--brand)', background: 'var(--bg)', color: 'var(--text)' }}
+                      />
+                      <button className="rename-confirm" type="submit" style={{ background: 'var(--brand)', color: 'white', border: 'none', borderRadius: '6px', padding: '0.2rem 0.5rem', cursor: 'pointer' }}>
+                        <Check size={14} />
+                      </button>
+                      <button className="rename-cancel" type="button" onClick={() => setRenamingId(null)} style={{ background: 'transparent', color: 'var(--text-soft)', border: 'none', cursor: 'pointer' }}>
+                        <X size={14} />
+                      </button>
+                    </form>
+                  ) : (
+                    <>
+                      <button
+                        className={`folder-link ${activeFolderId === folder.id && view === 'tasks' ? 'folder-link-active' : ''}`}
+                        onClick={() => onOpenFolder(folder.id)}
+                        type="button"
+                      >
+                        <FolderIcon size={18} className="lucide-icon" />
+                        <span>{folder.name}</span>
+                      </button>
+                      <div className="folder-actions" style={{ display: 'flex', gap: '0.2rem' }}>
+                        <button
+                          aria-label={`Rename ${folder.name}`}
+                          className="folder-action-btn"
+                          onClick={(e) => handleStartRename(e, folder)}
+                          type="button"
+                        >
+                          <Edit3 size={14} />
+                        </button>
+                        <button
+                          aria-label={`Delete ${folder.name}`}
+                          className="folder-action-btn folder-delete"
+                          onClick={() => onDeleteFolder(folder.id)}
+                          type="button"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               );
             })

@@ -406,6 +406,19 @@ function DigitalCuratorApp() {
     setAllTasks((current) => current.filter((task) => task.folder_id !== folderId));
     setActiveFolderId(nextFolders[0]?.id || null);
   };
+  
+  const handleRenameFolder = async (folderId, newName) => {
+    if (!newName.trim()) return;
+    
+    const result = await runMutation(
+      () => supabase.from('folders').update({ name: newName }).eq('id', folderId),
+      isTr ? 'Klasör ismi güncellendi.' : 'Folder renamed.'
+    );
+
+    if (result) {
+      setFolders((current) => current.map((f) => f.id === folderId ? { ...f, name: newName } : f));
+    }
+  };
 
   const handleCreateTask = async (event) => {
     event.preventDefault();
@@ -673,6 +686,7 @@ REACT_APP_SUPABASE_ANON_KEY=your-anon-key`}</pre>
         onClose={() => setIsSidebarOpen(false)}
         onCreateFolder={handleCreateFolder}
         onDeleteFolder={handleDeleteFolder}
+        onRenameFolder={handleRenameFolder}
         onOpenFolder={(folderId) => {
           setActiveFolderId(folderId);
           setView(VIEWS.TASKS);
