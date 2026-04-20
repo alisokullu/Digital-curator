@@ -126,6 +126,13 @@ textarea {
 .archive-card h3,
 .task-copy h3 {
   margin: 0;
+  transition: font-size 0.2s ease;
+}
+
+@media (max-width: 640px) {
+  h1 { font-size: 1.35rem !important; }
+  h2 { font-size: 1.15rem !important; }
+  .eyebrow { font-size: 0.65rem; }
 }
 
 .eyebrow {
@@ -831,17 +838,24 @@ textarea {
   }
 }
 
-@media (max-width: 860px) {
+@media (max-width: 768px) {
   .app-shell {
     grid-template-columns: 1fr;
   }
 
   .sidebar {
     position: fixed;
-    inset: 0 auto 0 0;
-    width: min(86vw, 320px);
-    transform: translateX(-105%);
-    transition: transform 220ms ease;
+    width: 280px;
+    transform: translateX(-100%);
+    box-shadow: 20px 0 50px rgba(0, 0, 0, 0.15);
+    overflow-y: auto; /* Allow scrolling in sidebar on mobile */
+    max-height: 100vh;
+    height: 100vh;
+  }
+  
+  .sidebar-footer {
+    margin-top: auto;
+    padding-bottom: 2rem; /* Extra space for mobile Safari/bottom bars */
   }
 
   .sidebar-open {
@@ -1075,19 +1089,34 @@ textarea {
   .stats-grid {
     grid-template-columns: 1fr;
     gap: 0.75rem;
+    margin: 0 auto;
+    width: 100%;
+    max-width: 100%;
   }
 
   .stat-card {
     padding: 1rem;
+    width: 100%;
+    margin: 0 auto;
   }
 
   .stat-card strong {
     font-size: 1.75rem;
   }
 
+  .composer-recurrence-select {
+    width: 38px !important;
+    padding-left: 1.8rem !important;
+    padding-right: 0 !important;
+    overflow: hidden;
+    white-space: nowrap;
+    text-indent: -9999px; /* Hide text, only icon stays visible */
+  }
+
   .insights-layout {
     grid-template-columns: 1fr;
     gap: 1rem;
+    width: 100%;
   }
 
   .history-panel {
