@@ -8,10 +8,11 @@ const NAV_ITEMS = [
 ];
 
 const getFolderIcon = (name) => {
-  const lower = name.toLowerCase().trim();
-  if (lower.includes('work') || lower.includes('iş') || lower.includes('is')) return Briefcase;
-  if (lower.includes('daily') || lower.includes('günlük') || lower.includes('gunluk') || lower.includes('günkü')) return Calendar;
-  if (lower.includes('home') || lower.includes('ev')) return Globe;
+  const n = name || '';
+  if (/work|iş|is/i.test(n)) return Briefcase;
+  if (/daily|günlük|gunluk|rutin/i.test(n)) return Calendar;
+  if (/personal|kişisel|kisisel/i.test(n)) return CheckSquare;
+  if (/global|genel|ev|home/i.test(n)) return Globe;
   return Folder;
 };
 

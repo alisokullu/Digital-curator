@@ -1153,7 +1153,7 @@ textarea {
   
   .folder-actions {
     opacity: 1 !important; /* Always show actions on mobile */
-    gap: 0.35rem !important; /* Tighten gap - yan yana olsun */
+    gap: 0.25rem !important; /* Tighter gap as requested */
   }
 
   .folder-insight-row {
