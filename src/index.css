@@ -1312,6 +1312,36 @@ textarea {
 .history-stats {
   font-size: 0.85rem;
   color: var(--text-soft);
+  margin-bottom: 0.4rem;
+}
+
+.history-tasks-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+}
+
+.history-task-tag {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.6rem;
+  border-radius: 8px;
+  background: var(--surface-muted);
+  transition: all 0.2s ease;
+}
+
+.task-done {
+  color: var(--text-soft);
+  opacity: 0.55;
+  background: transparent;
+  border: 1px solid var(--border);
+}
+
+.task-open {
+  color: var(--text);
+  font-weight: 600;
+  border: 1px solid var(--brand-soft);
+  background: var(--surface-strong);
 }
 
 .history-progress {

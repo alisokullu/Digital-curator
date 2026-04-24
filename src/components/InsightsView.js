@@ -28,11 +28,15 @@ function InsightsView({ activeFolder, folders, stats, history = [] }) {
           period_type: item.period_type,
           completed_count: 0,
           total_count: 0,
+          tasks_snapshot: [],
           isAggregate: true
         };
       }
       groups[key].completed_count += item.completed_count;
       groups[key].total_count += item.total_count;
+      if (item.tasks_snapshot && Array.isArray(item.tasks_snapshot)) {
+        groups[key].tasks_snapshot.push(...item.tasks_snapshot);
+      }
     });
     
     return Object.values(groups).sort((a, b) => new Date(b.period_date) - new Date(a.period_date));
@@ -165,6 +169,18 @@ function InsightsView({ activeFolder, folders, stats, history = [] }) {
                     <span className="history-stats">
                       {item.completed_count} / {item.total_count} {isTr ? 'Tamamlandı' : 'Completed'}
                     </span>
+                    {item.tasks_snapshot && item.tasks_snapshot.length > 0 && (
+                      <div className="history-tasks-preview">
+                        {item.tasks_snapshot.map((task, i) => (
+                          <span 
+                            key={i} 
+                            className={`history-task-tag ${task.is_completed ? 'task-done' : 'task-open'}`}
+                          >
+                            {task.title}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className="history-progress">
                     <div className="progress-track">

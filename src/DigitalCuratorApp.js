@@ -129,33 +129,6 @@ function DigitalCuratorApp() {
       const now = new Date();
       const routineUpdates = [];
       const historySnapshots = [];
-
-      // One-time Data Migration / Cleanup for user request
-      const dataFixKey = 'dc-fix-20apr-v2';
-      if (!localStorage.getItem(dataFixKey) && session?.user?.id === 'df60c477-8e6f-4b8d-9f37-bdaa44308387') {
-        const targetUserId = 'df60c477-8e6f-4b8d-9f37-bdaa44308387';
-        const targetFolderId = 'ed23d72b-7954-492b-8964-f4e5741c464b';
-        
-        Promise.all([
-          supabase.from('task_history').delete().eq('user_id', targetUserId),
-          supabase.from('folders').select('name').eq('id', targetFolderId).single()
-        ]).then(([delRes, folderRes]) => {
-          const folderName = folderRes.data?.name || 'Rutin';
-          return supabase.from('task_history').insert({
-            user_id: targetUserId,
-            folder_id: targetFolderId,
-            folder_name: folderName,
-            period_date: '2026-04-20',
-            period_type: 'daily',
-            completed_count: 2,
-            total_count: 2
-          });
-        }).then(() => {
-          localStorage.setItem(dataFixKey, 'done');
-          console.log('[Migration] History cleaned and 20th April record inserted.');
-          loadAll(false); // Refresh after migration
-        });
-      }
       
       // Group tasks by folder and recurrence to check for period transitions
       const recurrenceGroups = {};
@@ -232,7 +205,8 @@ function DigitalCuratorApp() {
               period_date: periodDateStr,
               period_type: recurrence,
               completed_count: completed,
-              total_count: tasks.length
+              total_count: tasks.length,
+              tasks_snapshot: tasks.map(t => ({ title: t.title, is_completed: t.is_completed }))
             });
           }
         }
