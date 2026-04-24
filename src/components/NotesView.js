@@ -66,20 +66,20 @@ function NotesView({ notes, onSaveNote, onDeleteNote, busy }) {
     });
   }, []);
 
-  const execCommand = (command, value = null) => {
+  const execCommand = (e, command, value = null) => {
+    e.preventDefault(); // Prevent focus loss from the editor
     document.execCommand(command, false, value);
     updateActiveStyles();
-    const target = document.activeElement;
-    if (target && (target === editorRef.current || target === titleRef.current)) {
-      target.focus();
-    }
   };
 
   useEffect(() => {
     if (isExpanding) {
-      if (editorRef.current) editorRef.current.innerHTML = draft.content;
-      if (titleRef.current) titleRef.current.innerHTML = draft.title;
-      
+      if (editorRef.current) {
+        editorRef.current.innerHTML = draft.content;
+      }
+      if (titleRef.current) {
+        titleRef.current.innerHTML = draft.title;
+      }
       const handleSelectionChange = () => updateActiveStyles();
       document.addEventListener('selectionchange', handleSelectionChange);
       return () => document.removeEventListener('selectionchange', handleSelectionChange);
@@ -116,7 +116,7 @@ function NotesView({ notes, onSaveNote, onDeleteNote, busy }) {
             <button 
               type="button" 
               className={`toolbar-btn ${activeStyles.bold ? 'toolbar-btn-active' : ''}`} 
-              onClick={() => execCommand('bold')} 
+              onMouseDown={(e) => execCommand(e, 'bold')} 
               title="Bold"
             >
               <Bold size={18}/>
@@ -124,7 +124,7 @@ function NotesView({ notes, onSaveNote, onDeleteNote, busy }) {
             <button 
               type="button" 
               className={`toolbar-btn ${activeStyles.italic ? 'toolbar-btn-active' : ''}`} 
-              onClick={() => execCommand('italic')} 
+              onMouseDown={(e) => execCommand(e, 'italic')} 
               title="Italic"
             >
               <Italic size={18}/>
@@ -132,7 +132,7 @@ function NotesView({ notes, onSaveNote, onDeleteNote, busy }) {
             <button 
               type="button" 
               className={`toolbar-btn ${activeStyles.list ? 'toolbar-btn-active' : ''}`} 
-              onClick={() => execCommand('insertUnorderedList')} 
+              onMouseDown={(e) => execCommand(e, 'insertUnorderedList')} 
               title="List"
             >
               <List size={18}/>
@@ -141,10 +141,10 @@ function NotesView({ notes, onSaveNote, onDeleteNote, busy }) {
             <div className="toolbar-divider" />
 
             <div className="toolbar-dropdown-wrapper">
-              <button type="button" className="toolbar-btn"><Type size={18}/></button>
+              <button type="button" className="toolbar-btn" onMouseDown={e => e.preventDefault()}><Type size={18}/></button>
               <div className="toolbar-dropdown font-size-dropdown">
                 {FONT_SIZES.map(f => (
-                  <button key={f.value} type="button" onClick={() => execCommand('fontSize', f.value)}>
+                  <button key={f.value} type="button" onMouseDown={(e) => execCommand(e, 'fontSize', f.value)}>
                     {f.label}
                   </button>
                 ))}
@@ -152,7 +152,7 @@ function NotesView({ notes, onSaveNote, onDeleteNote, busy }) {
             </div>
 
             <div className="toolbar-dropdown-wrapper">
-              <button type="button" className="toolbar-btn"><Palette size={18}/></button>
+              <button type="button" className="toolbar-btn" onMouseDown={e => e.preventDefault()}><Palette size={18}/></button>
               <div className="toolbar-dropdown color-dropdown">
                 {COLORS.map(c => (
                   <button 
@@ -160,7 +160,7 @@ function NotesView({ notes, onSaveNote, onDeleteNote, busy }) {
                     type="button" 
                     className="color-swatch" 
                     style={{ background: c.value === 'inherit' ? 'var(--text)' : c.value }} 
-                    onClick={() => execCommand('foreColor', c.value)}
+                    onMouseDown={(e) => execCommand(e, 'foreColor', c.value)}
                     title={c.name}
                   />
                 ))}
