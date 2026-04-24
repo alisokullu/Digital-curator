@@ -1,10 +1,20 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { isTr } from '../utils/i18n';
+import { Bold, Italic, List, Palette, Trash2, Save, X } from 'lucide-react';
 
 function NotesView({ notes, onSaveNote, onDeleteNote, busy }) {
   const [editingId, setEditingId] = useState(null);
   const [draft, setDraft] = useState({ title: '', content: '' });
   const [isExpanding, setIsExpanding] = useState(false);
+  const editorRef = useRef(null);
+
+  const COLORS = [
+    { name: 'Default', value: 'inherit' },
+    { name: 'Indigo', value: '#3f51b5' },
+    { name: 'Red', value: '#c24747' },
+    { name: 'Green', value: '#267653' },
+    { name: 'Gold', value: '#d4a017' }
+  ];
 
   const handleStartCreate = () => {
     setEditingId(null);
@@ -21,9 +31,10 @@ function NotesView({ notes, onSaveNote, onDeleteNote, busy }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!draft.content.trim()) return;
+    const content = editorRef.current ? editorRef.current.innerHTML : draft.content;
+    if (!content || content === '<br>') return;
     
-    await onSaveNote(editingId, draft);
+    await onSaveNote(editingId, { ...draft, content });
     setDraft({ title: '', content: '' });
     setIsExpanding(false);
     setEditingId(null);
@@ -34,6 +45,17 @@ function NotesView({ notes, onSaveNote, onDeleteNote, busy }) {
     setEditingId(null);
     setDraft({ title: '', content: '' });
   };
+
+  const execCommand = (command, value = null) => {
+    document.execCommand(command, false, value);
+    if (editorRef.current) editorRef.current.focus();
+  };
+
+  useEffect(() => {
+    if (isExpanding && editorRef.current) {
+      editorRef.current.innerHTML = draft.content;
+    }
+  }, [isExpanding]);
 
   const formatDate = (dateStr) => {
     const d = new Date(dateStr);
@@ -61,6 +83,27 @@ function NotesView({ notes, onSaveNote, onDeleteNote, busy }) {
 
       {isExpanding && (
         <article className="panel-card note-editor-card">
+          <div className="note-toolbar">
+            <button type="button" className="toolbar-btn" onClick={() => execCommand('bold')} title="Bold"><Bold size={18}/></button>
+            <button type="button" className="toolbar-btn" onClick={() => execCommand('italic')} title="Italic"><Italic size={18}/></button>
+            <button type="button" className="toolbar-btn" onClick={() => execCommand('insertUnorderedList')} title="List"><List size={18}/></button>
+            <div className="color-picker-wrapper">
+              <button type="button" className="toolbar-btn"><Palette size={18}/></button>
+              <div className="color-dropdown">
+                {COLORS.map(c => (
+                  <button 
+                    key={c.value} 
+                    type="button" 
+                    className="color-swatch" 
+                    style={{ background: c.value === 'inherit' ? 'var(--text)' : c.value }} 
+                    onClick={() => execCommand('foreColor', c.value)}
+                    title={c.name}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit} className="note-form">
             <input 
               type="text" 
@@ -69,21 +112,19 @@ function NotesView({ notes, onSaveNote, onDeleteNote, busy }) {
               onChange={e => setDraft({ ...draft, title: e.target.value })}
               className="note-title-input"
             />
-            <textarea 
-              placeholder={isTr ? 'Bir şeyler yazın...' : 'Write something...'}
-              value={draft.content}
-              onChange={e => setDraft({ ...draft, content: e.target.value })}
-              required
-              className="note-content-input"
-              rows={8}
-              autoFocus
+            <div 
+              ref={editorRef}
+              contentEditable
+              className="note-rich-editor"
+              data-placeholder={isTr ? 'Bir şeyler yazın...' : 'Write something...'}
+              onInput={e => setDraft({ ...draft, content: e.currentTarget.innerHTML })}
             />
             <div className="note-form-actions">
               <button type="button" className="button button-ghost" onClick={handleCancel}>
-                {isTr ? 'Vazgeç' : 'Cancel'}
+                <X size={18}/> {isTr ? 'Vazgeç' : 'Cancel'}
               </button>
-              <button type="submit" className="button button-primary" disabled={busy || !draft.content.trim()}>
-                {isTr ? 'Kaydet' : 'Save'}
+              <button type="submit" className="button button-primary" disabled={busy}>
+                <Save size={18}/> {isTr ? 'Kaydet' : 'Save'}
               </button>
             </div>
           </form>
@@ -95,7 +136,7 @@ function NotesView({ notes, onSaveNote, onDeleteNote, busy }) {
           notes.map(note => (
             <article key={note.id} className="panel-card note-card" onClick={() => handleEdit(note)}>
               <div className="note-card-header">
-                {note.title && <h3>{note.title}</h3>}
+                {note.title ? <h3>{note.title}</h3> : <h3 className="untitled-note">{isTr ? 'Başlıksız' : 'Untitled'}</h3>}
                 <button 
                   className="note-delete-btn" 
                   onClick={(e) => {
@@ -103,10 +144,13 @@ function NotesView({ notes, onSaveNote, onDeleteNote, busy }) {
                     onDeleteNote(note.id);
                   }}
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"/></svg>
+                  <Trash2 size={16}/>
                 </button>
               </div>
-              <p className="note-preview">{note.content}</p>
+              <div 
+                className="note-preview-rich" 
+                dangerouslySetInnerHTML={{ __html: note.content }} 
+              />
               <footer className="note-card-footer">
                 <span>{formatDate(note.updated_at)}</span>
               </footer>

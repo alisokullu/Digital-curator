@@ -1470,6 +1470,72 @@ textarea {
   gap: 1rem;
 }
 
+.note-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.toolbar-btn {
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  color: var(--text-soft);
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.toolbar-btn:hover {
+  background: var(--brand-soft);
+  color: var(--brand);
+  border-color: var(--brand);
+}
+
+.color-picker-wrapper {
+  position: relative;
+}
+
+.color-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  padding: 0.5rem;
+  border-radius: 12px;
+  display: flex;
+  gap: 0.4rem;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.color-picker-wrapper:hover .color-dropdown {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(5px);
+}
+
+.color-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.1);
+  cursor: pointer;
+  padding: 0;
+}
+
 .note-title-input {
   font-size: 1.4rem;
   font-weight: 700;
@@ -1480,22 +1546,53 @@ textarea {
   box-shadow: none !important;
 }
 
-.note-content-input {
-  border: none !important;
-  background: transparent !important;
-  padding: 0.5rem 0 !important;
-  font-size: 1.05rem;
+.note-rich-editor {
+  min-height: 250px;
+  max-height: 500px;
+  overflow-y: auto;
+  font-size: 1.1rem;
   line-height: 1.6;
-  resize: vertical;
+  outline: none;
   color: var(--text);
-  box-shadow: none !important;
+  padding: 0.5rem 0;
+}
+
+.note-rich-editor:empty:before {
+  content: attr(data-placeholder);
+  color: var(--text-soft);
+  opacity: 0.6;
+}
+
+.note-rich-editor ul, .note-preview-rich ul {
+  padding-left: 1.5rem;
+  margin: 0.5rem 0;
+}
+
+.note-preview-rich {
+  font-size: 0.95rem;
+  color: var(--text-soft);
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.5;
+  flex: 1;
+}
+
+.note-preview-rich ul {
+  padding-left: 1rem;
+}
+
+.untitled-note {
+  font-style: italic;
+  opacity: 0.6;
 }
 
 .note-form-actions {
   display: flex;
   justify-content: flex-end;
   gap: 0.8rem;
-  padding-top: 1rem;
+  padding-top: 1.5rem;
   border-top: 1px solid var(--border);
 }
 
