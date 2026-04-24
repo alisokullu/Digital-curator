@@ -82,6 +82,12 @@ function NotesView({ notes, onSaveNote, onDeleteNote, busy }) {
       }
       const handleSelectionChange = () => updateActiveStyles();
       document.addEventListener('selectionchange', handleSelectionChange);
+      
+      // Auto-focus the title on expand
+      setTimeout(() => {
+        if (titleRef.current) titleRef.current.focus();
+      }, 100);
+
       return () => document.removeEventListener('selectionchange', handleSelectionChange);
     }
   }, [isExpanding, updateActiveStyles]);

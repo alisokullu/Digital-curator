@@ -1580,11 +1580,19 @@ textarea {
   font-weight: 700;
   border: none !important;
   background: transparent !important;
-  padding: 0 !important;
+  padding: 0.5rem 0.8rem !important;
+  margin-left: -0.8rem;
   color: var(--text);
   box-shadow: none !important;
   outline: none;
   min-height: 1.6em;
+  border-radius: 8px;
+  cursor: text;
+  transition: background 0.2s ease;
+}
+
+.note-title-rich:focus, .note-rich-editor:focus {
+  background: rgba(var(--brand-rgb), 0.03);
 }
 
 .note-title-rich:empty:before, .note-rich-editor:empty:before {
@@ -1592,6 +1600,22 @@ textarea {
   color: var(--text-soft);
   opacity: 0.6;
   font-weight: normal;
+  pointer-events: none;
+}
+
+.note-rich-editor {
+  min-height: 250px;
+  max-height: 500px;
+  overflow-y: auto;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  outline: none;
+  color: var(--text);
+  padding: 1rem 0.8rem !important;
+  margin-left: -0.8rem;
+  cursor: text;
+  border-radius: 8px;
+  transition: background 0.2s ease;
 }
 
 .note-rich-editor ul, .note-preview-rich ul {
