@@ -681,8 +681,9 @@ function DigitalCuratorApp() {
       );
     }
 
-    return (
-      <section className="setup-panel">
+    if (!isSupabaseConfigured) {
+      return (
+        <section className="setup-panel">
           <span className="eyebrow">Setup Required</span>
           <h2>Connect Supabase to unlock the workspace.</h2>
           <p>
