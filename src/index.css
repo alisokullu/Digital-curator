@@ -1499,11 +1499,25 @@ textarea {
   border-color: var(--brand);
 }
 
-.color-picker-wrapper {
+.toolbar-btn-active {
+  background: var(--brand) !important;
+  color: white !important;
+  border-color: var(--brand) !important;
+  box-shadow: 0 0 10px rgba(var(--brand-rgb), 0.4);
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--border);
+  margin: 0 0.5rem;
+}
+
+.toolbar-dropdown-wrapper {
   position: relative;
 }
 
-.color-dropdown {
+.toolbar-dropdown {
   position: absolute;
   top: 100%;
   left: 0;
@@ -1512,7 +1526,6 @@ textarea {
   padding: 0.5rem;
   border-radius: 12px;
   display: flex;
-  gap: 0.4rem;
   box-shadow: 0 8px 30px rgba(0,0,0,0.15);
   visibility: hidden;
   opacity: 0;
@@ -1521,7 +1534,33 @@ textarea {
   z-index: 10;
 }
 
-.color-picker-wrapper:hover .color-dropdown {
+.font-size-dropdown {
+  flex-direction: column;
+  min-width: 120px;
+  gap: 2px;
+}
+
+.font-size-dropdown button {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  padding: 0.5rem 0.8rem;
+  text-align: left;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.font-size-dropdown button:hover {
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
+.color-dropdown {
+  gap: 0.4rem;
+}
+
+.toolbar-dropdown-wrapper:hover .toolbar-dropdown {
   visibility: visible;
   opacity: 1;
   transform: translateY(5px);
@@ -1536,7 +1575,7 @@ textarea {
   padding: 0;
 }
 
-.note-title-input {
+.note-title-rich {
   font-size: 1.4rem;
   font-weight: 700;
   border: none !important;
@@ -1544,23 +1583,15 @@ textarea {
   padding: 0 !important;
   color: var(--text);
   box-shadow: none !important;
-}
-
-.note-rich-editor {
-  min-height: 250px;
-  max-height: 500px;
-  overflow-y: auto;
-  font-size: 1.1rem;
-  line-height: 1.6;
   outline: none;
-  color: var(--text);
-  padding: 0.5rem 0;
+  min-height: 1.6em;
 }
 
-.note-rich-editor:empty:before {
+.note-title-rich:empty:before, .note-rich-editor:empty:before {
   content: attr(data-placeholder);
   color: var(--text-soft);
   opacity: 0.6;
+  font-weight: normal;
 }
 
 .note-rich-editor ul, .note-preview-rich ul {

@@ -1,12 +1,15 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { isTr } from '../utils/i18n';
-import { Bold, Italic, List, Palette, Trash2, Save, X } from 'lucide-react';
+import { Bold, Italic, List, Palette, Trash2, Save, X, Type } from 'lucide-react';
 
 function NotesView({ notes, onSaveNote, onDeleteNote, busy }) {
   const [editingId, setEditingId] = useState(null);
   const [draft, setDraft] = useState({ title: '', content: '' });
   const [isExpanding, setIsExpanding] = useState(false);
+  const [activeStyles, setActiveStyles] = useState({ bold: false, italic: false, list: false });
+  
   const editorRef = useRef(null);
+  const titleRef = useRef(null);
 
   const COLORS = [
     { name: 'Default', value: 'inherit' },
@@ -14,6 +17,13 @@ function NotesView({ notes, onSaveNote, onDeleteNote, busy }) {
     { name: 'Red', value: '#c24747' },
     { name: 'Green', value: '#267653' },
     { name: 'Gold', value: '#d4a017' }
+  ];
+
+  const FONT_SIZES = [
+    { label: isTr ? 'Küçük' : 'Small', value: '2' },
+    { label: isTr ? 'Orta' : 'Medium', value: '3' },
+    { label: isTr ? 'Büyük' : 'Large', value: '5' },
+    { label: isTr ? 'X-Büyük' : 'X-Large', value: '6' }
   ];
 
   const handleStartCreate = () => {
@@ -31,10 +41,12 @@ function NotesView({ notes, onSaveNote, onDeleteNote, busy }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const content = editorRef.current ? editorRef.current.innerHTML : draft.content;
-    if (!content || content === '<br>') return;
+    const content = editorRef.current?.innerHTML || draft.content;
+    const title = titleRef.current?.innerHTML || draft.title;
     
-    await onSaveNote(editingId, { ...draft, content });
+    if ((!content || content === '<br>') && (!title || title === '<br>')) return;
+    
+    await onSaveNote(editingId, { title, content });
     setDraft({ title: '', content: '' });
     setIsExpanding(false);
     setEditingId(null);
@@ -46,16 +58,33 @@ function NotesView({ notes, onSaveNote, onDeleteNote, busy }) {
     setDraft({ title: '', content: '' });
   };
 
+  const updateActiveStyles = useCallback(() => {
+    setActiveStyles({
+      bold: document.queryCommandState('bold'),
+      italic: document.queryCommandState('italic'),
+      list: document.queryCommandState('insertUnorderedList')
+    });
+  }, []);
+
   const execCommand = (command, value = null) => {
     document.execCommand(command, false, value);
-    if (editorRef.current) editorRef.current.focus();
+    updateActiveStyles();
+    const target = document.activeElement;
+    if (target && (target === editorRef.current || target === titleRef.current)) {
+      target.focus();
+    }
   };
 
   useEffect(() => {
-    if (isExpanding && editorRef.current) {
-      editorRef.current.innerHTML = draft.content;
+    if (isExpanding) {
+      if (editorRef.current) editorRef.current.innerHTML = draft.content;
+      if (titleRef.current) titleRef.current.innerHTML = draft.title;
+      
+      const handleSelectionChange = () => updateActiveStyles();
+      document.addEventListener('selectionchange', handleSelectionChange);
+      return () => document.removeEventListener('selectionchange', handleSelectionChange);
     }
-  }, [isExpanding]);
+  }, [isExpanding, updateActiveStyles]);
 
   const formatDate = (dateStr) => {
     const d = new Date(dateStr);
@@ -84,12 +113,47 @@ function NotesView({ notes, onSaveNote, onDeleteNote, busy }) {
       {isExpanding && (
         <article className="panel-card note-editor-card">
           <div className="note-toolbar">
-            <button type="button" className="toolbar-btn" onClick={() => execCommand('bold')} title="Bold"><Bold size={18}/></button>
-            <button type="button" className="toolbar-btn" onClick={() => execCommand('italic')} title="Italic"><Italic size={18}/></button>
-            <button type="button" className="toolbar-btn" onClick={() => execCommand('insertUnorderedList')} title="List"><List size={18}/></button>
-            <div className="color-picker-wrapper">
+            <button 
+              type="button" 
+              className={`toolbar-btn ${activeStyles.bold ? 'toolbar-btn-active' : ''}`} 
+              onClick={() => execCommand('bold')} 
+              title="Bold"
+            >
+              <Bold size={18}/>
+            </button>
+            <button 
+              type="button" 
+              className={`toolbar-btn ${activeStyles.italic ? 'toolbar-btn-active' : ''}`} 
+              onClick={() => execCommand('italic')} 
+              title="Italic"
+            >
+              <Italic size={18}/>
+            </button>
+            <button 
+              type="button" 
+              className={`toolbar-btn ${activeStyles.list ? 'toolbar-btn-active' : ''}`} 
+              onClick={() => execCommand('insertUnorderedList')} 
+              title="List"
+            >
+              <List size={18}/>
+            </button>
+            
+            <div className="toolbar-divider" />
+
+            <div className="toolbar-dropdown-wrapper">
+              <button type="button" className="toolbar-btn"><Type size={18}/></button>
+              <div className="toolbar-dropdown font-size-dropdown">
+                {FONT_SIZES.map(f => (
+                  <button key={f.value} type="button" onClick={() => execCommand('fontSize', f.value)}>
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="toolbar-dropdown-wrapper">
               <button type="button" className="toolbar-btn"><Palette size={18}/></button>
-              <div className="color-dropdown">
+              <div className="toolbar-dropdown color-dropdown">
                 {COLORS.map(c => (
                   <button 
                     key={c.value} 
@@ -105,12 +169,12 @@ function NotesView({ notes, onSaveNote, onDeleteNote, busy }) {
           </div>
 
           <form onSubmit={handleSubmit} className="note-form">
-            <input 
-              type="text" 
-              placeholder={isTr ? 'Başlık (İsteğe bağlı)' : 'Title (Optional)'} 
-              value={draft.title}
-              onChange={e => setDraft({ ...draft, title: e.target.value })}
-              className="note-title-input"
+            <div 
+              ref={titleRef}
+              contentEditable
+              className="note-title-rich"
+              data-placeholder={isTr ? 'Başlık (İsteğe bağlı)' : 'Title (Optional)'}
+              onInput={e => setDraft({ ...draft, title: e.currentTarget.innerHTML })}
             />
             <div 
               ref={editorRef}
@@ -136,7 +200,11 @@ function NotesView({ notes, onSaveNote, onDeleteNote, busy }) {
           notes.map(note => (
             <article key={note.id} className="panel-card note-card" onClick={() => handleEdit(note)}>
               <div className="note-card-header">
-                {note.title ? <h3>{note.title}</h3> : <h3 className="untitled-note">{isTr ? 'Başlıksız' : 'Untitled'}</h3>}
+                {note.title && note.title !== '<br>' ? (
+                   <h3 dangerouslySetInnerHTML={{ __html: note.title }} />
+                ) : (
+                   <h3 className="untitled-note">{isTr ? 'Başlıksız' : 'Untitled'}</h3>
+                )}
                 <button 
                   className="note-delete-btn" 
                   onClick={(e) => {
