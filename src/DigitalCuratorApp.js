@@ -7,12 +7,14 @@ import Sidebar from './components/Sidebar';
 import TaskComposer from './components/TaskComposer';
 import TaskList from './components/TaskList';
 import AuthScreen from './components/AuthScreen';
+import NotesView from './components/NotesView';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 
 const VIEWS = {
   TASKS: 'tasks',
   INSIGHTS: 'insights',
   ARCHIVE: 'archive',
+  NOTES: 'notes',
 };
 
 const THEME_KEY = 'digital-curator-theme';
@@ -47,6 +49,7 @@ function DigitalCuratorApp() {
   const [searchTerm, setSearchTerm] = useState('');
   const [session, setSession] = useState(null);
   const [history, setHistory] = useState([]);
+  const [notes, setNotes] = useState([]);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -95,7 +98,7 @@ function DigitalCuratorApp() {
       }
       setError('');
 
-      const [folderResponse, taskResponse, historyResponse] = await Promise.all([
+      const [folderResponse, taskResponse, historyResponse, notesResponse] = await Promise.all([
         supabase.from('folders').select('*').order('created_at', { ascending: true }),
         supabase
           .from('tasks')
@@ -107,6 +110,10 @@ function DigitalCuratorApp() {
           .select('*')
           .order('period_date', { ascending: false })
           .limit(100),
+        supabase
+          .from('notes')
+          .select('*')
+          .order('updated_at', { ascending: false }),
       ]);
 
       if (cancelled) {
@@ -124,6 +131,7 @@ function DigitalCuratorApp() {
       const nextFolders = folderResponse.data || [];
       const nextTasks = taskResponse.data || [];
       const nextHistory = historyResponse.data || [];
+      const nextNotes = notesResponse.data || [];
 
       // Routine Automation Engine + History Snapshot
       const now = new Date();
@@ -232,6 +240,7 @@ function DigitalCuratorApp() {
       setFolders(nextFolders);
       setAllTasks(nextTasks);
       setHistory(nextHistory);
+      setNotes(nextNotes);
       setActiveFolderId((currentId) => {
         if (nextFolders.length === 0) {
           return null;
@@ -255,6 +264,7 @@ function DigitalCuratorApp() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'folders' }, () => loadAll(false))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => loadAll(false))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'task_history' }, () => loadAll(false))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notes' }, () => loadAll(false))
       .subscribe();
 
     return () => {
@@ -622,13 +632,57 @@ function DigitalCuratorApp() {
     setEditingTaskId(null);
     setEditingDraft({ title: '', description: '' });
   };
+  
+  const handleSaveNote = async (noteId, draft) => {
+    const content = draft.content.trim();
+    if (!content) return;
+    
+    const nextUpdatedAt = stamp();
+    const payload = {
+      title: draft.title?.trim() || null,
+      content,
+      updated_at: nextUpdatedAt,
+      user_id: session.user.id
+    };
+
+    if (noteId) {
+      await runMutation(
+        () => supabase.from('notes').update(payload).eq('id', noteId),
+        isTr ? 'Not güncellendi.' : 'Note updated.'
+      );
+    } else {
+      await runMutation(
+        () => supabase.from('notes').insert([payload]),
+        isTr ? 'Not eklendi.' : 'Note added.'
+      );
+    }
+  };
+
+  const handleDeleteNote = async (noteId) => {
+    if (!window.confirm(isTr ? 'Bu not silinsin mi?' : 'Delete this note?')) return;
+    
+    await runMutation(
+      () => supabase.from('notes').delete().eq('id', noteId),
+      isTr ? 'Not silindi.' : 'Note deleted.'
+    );
+  };
 
   const activeTaskCount = activeTasks.filter((task) => !task.is_completed).length;
 
   const renderMainContent = () => {
-    if (!isSupabaseConfigured) {
+    if (view === VIEWS.NOTES) {
       return (
-        <section className="setup-panel">
+        <NotesView 
+          notes={notes}
+          onDeleteNote={handleDeleteNote}
+          onSaveNote={handleSaveNote}
+          busy={busy}
+        />
+      );
+    }
+
+    return (
+      <section className="setup-panel">
           <span className="eyebrow">Setup Required</span>
           <h2>Connect Supabase to unlock the workspace.</h2>
           <p>

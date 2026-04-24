@@ -1445,3 +1445,141 @@ textarea {
   border: 6px solid transparent;
   border-top-color: var(--border);
 }
+
+/* Notes View Styles */
+.notes-view {
+  margin-top: 1.25rem;
+  animation: fadeIn 0.4s ease forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.note-editor-card {
+  margin-bottom: 2rem;
+  padding: 1.8rem !important;
+  border: 1px solid var(--brand-soft);
+  background: linear-gradient(135deg, var(--surface), var(--surface-strong));
+}
+
+.note-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.note-title-input {
+  font-size: 1.4rem;
+  font-weight: 700;
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+  color: var(--text);
+  box-shadow: none !important;
+}
+
+.note-content-input {
+  border: none !important;
+  background: transparent !important;
+  padding: 0.5rem 0 !important;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  resize: vertical;
+  color: var(--text);
+  box-shadow: none !important;
+}
+
+.note-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.8rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.notes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.note-card {
+  cursor: pointer;
+  padding: 1.5rem !important;
+  display: flex !important;
+  flex-direction: column;
+  gap: 0.8rem;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  min-height: 200px;
+}
+
+.note-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--brand);
+  background: var(--surface-strong);
+}
+
+.note-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.note-card h3 {
+  font-size: 1.15rem;
+  line-height: 1.2;
+  margin: 0;
+  color: var(--brand-deep);
+}
+
+.note-preview {
+  font-size: 0.95rem;
+  color: var(--text-soft);
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.5;
+  flex: 1;
+}
+
+.note-card-footer {
+  font-size: 0.75rem;
+  color: var(--text-soft);
+  opacity: 0.8;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--border);
+}
+
+.note-delete-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-soft);
+  padding: 0.4rem;
+  border-radius: 8px;
+  opacity: 0;
+  transition: all 0.2s ease;
+}
+
+.note-card:hover .note-delete-btn {
+  opacity: 1;
+}
+
+.note-delete-btn:hover {
+  background: var(--danger);
+  color: white;
+}
+
+.note-delete-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+@media (max-width: 640px) {
+  .note-title-input { font-size: 1.2rem; }
+  .notes-grid { grid-template-columns: 1fr; }
+}

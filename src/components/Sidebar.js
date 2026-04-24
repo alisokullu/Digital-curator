@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { CheckSquare, Archive as ArchiveIcon, Activity, Plus, Folder, Briefcase, Calendar, Globe, Trash2, Edit3, Check, X } from 'lucide-react';
+import { CheckSquare, Archive as ArchiveIcon, Activity, Plus, Folder, Briefcase, Calendar, Globe, Trash2, Edit3, Check, X, FileText } from 'lucide-react';
 
 const NAV_ITEMS = [
   { id: 'tasks', label: 'Görevler', enLabel: 'Tasks', icon: CheckSquare },
+  { id: 'notes', label: 'Notlar', enLabel: 'Notes', icon: FileText },
   { id: 'insights', label: 'İstatistikler', enLabel: 'Insights', icon: Activity },
   { id: 'archive', label: 'Arşiv', enLabel: 'Archive', icon: ArchiveIcon },
 ];
