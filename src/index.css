@@ -153,8 +153,8 @@ textarea {
 }
 
 @media (max-width: 640px) {
-  .topbar {
-    padding-left: 0.1rem !important; /* Extremely close to the edge as requested */
+  .main-panel {
+    padding: 1.5rem 1rem !important;
   }
 }
 
