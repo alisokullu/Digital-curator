@@ -214,7 +214,12 @@ function DigitalCuratorApp() {
               period_type: recurrence,
               completed_count: completed,
               total_count: tasks.length,
-              tasks_snapshot: tasks.map(t => ({ title: t.title, is_completed: t.is_completed }))
+              tasks_snapshot: tasks.map(t => ({ 
+                title: t.title, 
+                is_completed: t.is_completed,
+                duration_total: t.duration_total || 0,
+                duration_progress: t.duration_progress || 0
+              }))
             });
           }
         }
@@ -234,7 +239,11 @@ function DigitalCuratorApp() {
       }
 
       if (routineUpdates.length > 0) {
-        supabase.from('tasks').update({ is_completed: false, updated_at: now.toISOString() }).in('id', routineUpdates).then();
+        supabase.from('tasks').update({ 
+          is_completed: false, 
+          duration_progress: 0, 
+          updated_at: now.toISOString() 
+        }).in('id', routineUpdates).then();
       }
 
       setFolders(nextFolders);
@@ -632,6 +641,30 @@ function DigitalCuratorApp() {
     setEditingTaskId(null);
     setEditingDraft({ title: '', description: '' });
   };
+
+  const handleUpdateTaskDuration = async (taskId, total) => {
+    const nextUpdatedAt = stamp();
+    await runMutation(
+      () => supabase.from('tasks').update({ duration_total: total, updated_at: nextUpdatedAt }).eq('id', taskId),
+      isTr ? 'Görev süresi güncellendi.' : 'Task duration updated.'
+    );
+  };
+
+  const handleUpdateTaskProgress = async (taskId, progress, isCompleted = false) => {
+    const nextUpdatedAt = stamp();
+    const payload = { 
+       duration_progress: progress, 
+       updated_at: nextUpdatedAt 
+    };
+    if (isCompleted) {
+      payload.is_completed = true;
+    }
+    
+    await runMutation(
+      () => supabase.from('tasks').update(payload).eq('id', taskId),
+      isCompleted ? (isTr ? 'Harika! Görev tamamlandı.' : 'Great! Task completed.') : null
+    );
+  };
   
   const handleSaveNote = async (noteId, draft) => {
     const content = draft.content.trim();
@@ -745,6 +778,8 @@ REACT_APP_SUPABASE_ANON_KEY=your-anon-key`}</pre>
           onChangeEditingDraft={setEditingDraft}
           onSaveEdit={handleSaveEdit}
           onToggleTask={handleToggleTask}
+          onUpdateDuration={handleUpdateTaskDuration}
+          onUpdateProgress={handleUpdateTaskProgress}
           tasks={activeTasks}
         />
       </>

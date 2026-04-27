@@ -177,6 +177,7 @@ function InsightsView({ activeFolder, folders, stats, history = [] }) {
                             className={`history-task-tag ${task.is_completed ? 'task-done' : 'task-open'}`}
                           >
                             {task.title}
+                            {task.duration_total > 0 && ` (${task.duration_progress}/${task.duration_total} ${isTr ? 'dk' : 'min'})`}
                           </span>
                         ))}
                       </div>

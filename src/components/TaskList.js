@@ -10,6 +10,8 @@ function TaskList({
   onChangeEditingDraft,
   onSaveEdit,
   onToggleTask,
+  onUpdateDuration,
+  onUpdateProgress,
   tasks,
 }) {
   if (!tasks.length) {
@@ -34,6 +36,8 @@ function TaskList({
           onChangeEditingDraft={onChangeEditingDraft}
           onSaveEdit={onSaveEdit}
           onToggleTask={onToggleTask}
+          onUpdateDuration={onUpdateDuration}
+          onUpdateProgress={onUpdateProgress}
           task={task}
         />
       ))}

@@ -647,6 +647,132 @@ textarea {
   flex-wrap: wrap;
 }
 
+.task-card-customizing {
+  border-color: var(--brand) !important;
+  background: var(--surface-strong) !important;
+  box-shadow: 0 10px 30px rgba(63, 81, 181, 0.12) !important;
+}
+
+.task-customizer {
+  background: var(--surface-muted);
+  padding: 1.25rem;
+  border-radius: 20px;
+  border: 1px dashed var(--brand);
+  animation: slideInCustomizer 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideInCustomizer {
+  from { opacity: 0; transform: scale(0.96) translateY(5px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.customizer-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 800;
+  color: var(--brand);
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+}
+
+.task-customizer p {
+  font-size: 0.9rem;
+  margin-bottom: 1.2rem;
+  color: var(--text-soft);
+}
+
+.customizer-input-row {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.customizer-input-row input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface-strong);
+  font-size: 1rem;
+  outline: none;
+}
+
+.customizer-input-row input:focus {
+  border-color: var(--brand);
+}
+
+.task-progress-zone {
+  margin: 0.5rem 0;
+  padding: 1.1rem;
+  background: var(--surface-muted);
+  border-radius: 20px;
+  border: 1px solid var(--border);
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.85rem;
+  font-size: 0.9rem;
+}
+
+.progress-header strong {
+  color: var(--brand-deep);
+}
+
+.progress-steps {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.progress-steps button {
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  color: var(--brand);
+  padding: 0.4rem;
+  border-radius: 10px;
+  display: flex;
+  transition: all 0.2s ease;
+}
+
+.progress-steps button:hover {
+  background: var(--brand);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.task-progress-bar {
+  height: 10px;
+  background: var(--border-strong);
+  border-radius: 99px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--brand), var(--brand-deep));
+  transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border-radius: 99px;
+}
+
+.task-routine-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--brand);
+  font-weight: 700;
+  background: var(--brand-soft);
+  padding: 0.25rem 0.75rem;
+  border-radius: 99px;
+  font-size: 0.8rem;
+  border: 1px solid var(--border);
+}
+
+
 .archive-card {
   display: flex;
   align-items: center;
