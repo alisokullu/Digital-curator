@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { formatDateTime } from '../utils/formatters';
 import { isTr } from '../utils/i18n';
 import { Repeat, Settings2, Clock, Save, X, ChevronRight, ChevronLeft } from 'lucide-react';
@@ -18,6 +18,12 @@ function TaskCard({
 }) {
   const [isCustomizing, setIsCustomizing] = useState(false);
   const [tempDuration, setTempDuration] = useState(task.duration_total || 0);
+  const [localProgress, setLocalProgress] = useState(task.duration_progress || 0);
+
+  // Sync local state with remote state when it changes from outside
+  useEffect(() => {
+    setLocalProgress(task.duration_progress || 0);
+  }, [task.duration_progress]);
 
   const handleKeyDown = (event) => {
     if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
@@ -35,13 +41,18 @@ function TaskCard({
     setIsCustomizing(false);
   };
 
-  const handleProgressAdjust = (delta) => {
-    const nextVal = Math.min(task.duration_total, Math.max(0, (task.duration_progress || 0) + delta));
-    const isNowCompleted = nextVal >= task.duration_total && task.duration_total > 0 && !task.is_completed;
-    onUpdateProgress(task.id, nextVal, isNowCompleted);
+  const handleProgressChange = (val) => {
+    const nextVal = parseInt(val);
+    setLocalProgress(nextVal);
   };
 
-  const progressPct = task.duration_total ? Math.min(100, Math.round(((task.duration_progress || 0) / task.duration_total) * 100)) : 0;
+  const syncProgressToDB = () => {
+    if (localProgress === task.duration_progress) return;
+    const isNowCompleted = localProgress >= task.duration_total && task.duration_total > 0 && !task.is_completed;
+    onUpdateProgress(task.id, localProgress, isNowCompleted);
+  };
+
+  const progressPct = task.duration_total ? Math.min(100, Math.round((localProgress / task.duration_total) * 100)) : 0;
 
   return (
     <article className={`task-card ${task.is_completed ? 'task-card-complete' : ''} ${isCustomizing ? 'task-card-customizing' : ''}`}>
@@ -114,7 +125,7 @@ function TaskCard({
             {task.duration_total > 0 && (
               <div className="task-progress-zone">
                 <div className="progress-header">
-                   <span>{isTr ? 'İlerleme:' : 'Progress:'} <strong>{task.duration_progress || 0} / {task.duration_total} dk</strong></span>
+                   <span>{isTr ? 'İlerleme:' : 'Progress:'} <strong>{localProgress} / {task.duration_total} dk</strong></span>
                    <span className="progress-pct-badge">{progressPct}%</span>
                 </div>
                 <div className="task-slider-container">
@@ -122,12 +133,10 @@ function TaskCard({
                      type="range" 
                      min="0" 
                      max={task.duration_total} 
-                     value={task.duration_progress || 0}
-                     onChange={(e) => {
-                       const nextVal = parseInt(e.target.value);
-                       const isNowCompleted = nextVal >= task.duration_total && task.duration_total > 0 && !task.is_completed;
-                       onUpdateProgress(task.id, nextVal, isNowCompleted);
-                     }}
+                     value={localProgress}
+                     onChange={(e) => handleProgressChange(e.target.value)}
+                     onMouseUp={syncProgressToDB}
+                     onTouchEnd={syncProgressToDB}
                      className="task-progress-slider"
                    />
                    <div className="task-progress-bar-bg">
