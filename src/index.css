@@ -80,6 +80,7 @@ textarea {
   grid-template-columns: 300px minmax(0, 1fr);
   min-height: 100vh;
   width: 100%;
+  background: linear-gradient(to right, var(--surface) 300px, transparent 300px);
 }
 
 .sidebar {
@@ -88,6 +89,7 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  min-height: 100vh;
   height: 100vh;
   padding: 2rem 1.5rem;
   background: var(--surface);
@@ -643,8 +645,19 @@ textarea {
 .archive-actions,
 .task-editor-actions {
   display: flex;
-  gap: 0.6rem;
-  flex-wrap: wrap;
+  gap: 0.4rem;
+  flex-wrap: nowrap;
+}
+
+.task-actions .button {
+  padding: 0.5rem 0.8rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.task-actions .button svg {
+  width: 14px;
+  height: 14px;
 }
 
 .task-card-customizing {
