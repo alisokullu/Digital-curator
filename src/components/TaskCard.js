@@ -115,13 +115,24 @@ function TaskCard({
               <div className="task-progress-zone">
                 <div className="progress-header">
                    <span>{isTr ? 'İlerleme:' : 'Progress:'} <strong>{task.duration_progress || 0} / {task.duration_total} dk</strong></span>
-                   <div className="progress-steps">
-                      <button onClick={() => handleProgressAdjust(-1)}><ChevronLeft size={16}/></button>
-                      <button onClick={() => handleProgressAdjust(1)}><ChevronRight size={16}/></button>
-                   </div>
+                   <span className="progress-pct-badge">{progressPct}%</span>
                 </div>
-                <div className="task-progress-bar">
-                   <div className="progress-fill" style={{ width: `${progressPct}%` }} />
+                <div className="task-slider-container">
+                   <input 
+                     type="range" 
+                     min="0" 
+                     max={task.duration_total} 
+                     value={task.duration_progress || 0}
+                     onChange={(e) => {
+                       const nextVal = parseInt(e.target.value);
+                       const isNowCompleted = nextVal >= task.duration_total && task.duration_total > 0 && !task.is_completed;
+                       onUpdateProgress(task.id, nextVal, isNowCompleted);
+                     }}
+                     className="task-progress-slider"
+                   />
+                   <div className="task-progress-bar-bg">
+                      <div className="progress-fill" style={{ width: `${progressPct}%` }} />
+                   </div>
                 </div>
               </div>
             )}

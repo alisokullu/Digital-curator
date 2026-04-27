@@ -704,8 +704,8 @@ textarea {
 }
 
 .task-progress-zone {
-  margin: 0.5rem 0;
-  padding: 1.1rem;
+  margin: 0.6rem 0;
+  padding: 1.25rem;
   background: var(--surface-muted);
   border-radius: 20px;
   border: 1px solid var(--border);
@@ -715,7 +715,7 @@ textarea {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.85rem;
+  margin-bottom: 1rem;
   font-size: 0.9rem;
 }
 
@@ -723,40 +723,77 @@ textarea {
   color: var(--brand-deep);
 }
 
-.progress-steps {
-  display: flex;
-  gap: 0.4rem;
-}
-
-.progress-steps button {
-  background: var(--surface-strong);
-  border: 1px solid var(--border);
-  color: var(--brand);
-  padding: 0.4rem;
-  border-radius: 10px;
-  display: flex;
-  transition: all 0.2s ease;
-}
-
-.progress-steps button:hover {
+.progress-pct-badge {
   background: var(--brand);
   color: white;
-  transform: translateY(-2px);
+  padding: 0.2rem 0.6rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  box-shadow: 0 4px 10px rgba(63, 81, 181, 0.2);
 }
 
-.task-progress-bar {
-  height: 10px;
+.task-slider-container {
+  position: relative;
+  padding: 10px 0;
+  display: flex;
+  align-items: center;
+}
+
+.task-progress-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 12px;
+  background: var(--border-strong);
+  border-radius: 99px;
+  outline: none;
+  position: relative;
+  z-index: 10;
+  cursor: pointer;
+}
+
+/* Customizing the slider track and thumb */
+.task-progress-slider::-webkit-slider-runnable-track {
+  height: 12px;
+  border-radius: 99px;
+  background: transparent; /* We let the fill show through or just use the slider's own track */
+}
+
+.task-progress-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  background: var(--brand-deep);
+  border: 3px solid white;
+  border-radius: 50%;
+  cursor: grab;
+  margin-top: -6px; /* Center thumb on track */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  transition: transform 0.1s ease;
+}
+
+.task-progress-slider::-webkit-slider-thumb:active {
+  cursor: grabbing;
+  transform: scale(1.15);
+}
+
+.task-progress-bar-bg {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 12px;
   background: var(--border-strong);
   border-radius: 99px;
   overflow: hidden;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+  pointer-events: none;
 }
 
 .progress-fill {
   height: 100%;
   background: linear-gradient(90deg, var(--brand), var(--brand-deep));
-  transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
   border-radius: 99px;
+  transition: width 0.1s ease-out; /* Fast response */
 }
 
 .task-routine-badge {
