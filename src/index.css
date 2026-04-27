@@ -1474,10 +1474,14 @@ textarea {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding-bottom: 1rem;
+  padding: 0.5rem 0 1rem;
   border-bottom: 1px solid var(--border);
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
+  position: sticky;
+  top: -1.8rem; /* Offset to stay at top while scrolling inside card */
+  background: inherit;
+  z-index: 20;
 }
 
 .toolbar-btn {
@@ -1732,6 +1736,22 @@ textarea {
 }
 
 @media (max-width: 640px) {
-  .note-title-input { font-size: 1.2rem; }
+  .note-title-rich { font-size: 1.2rem; }
   .notes-grid { grid-template-columns: 1fr; }
+  .note-editor-card {
+    padding: 1rem !important;
+    margin-bottom: 1.5rem;
+  }
+  .note-toolbar {
+    gap: 0.35rem;
+    top: -1rem;
+  }
+  .toolbar-btn {
+    width: 34px;
+    height: 34px;
+  }
+  .note-rich-editor {
+    min-height: 200px;
+    font-size: 1rem;
+  }
 }

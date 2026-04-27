@@ -669,11 +669,19 @@ function DigitalCuratorApp() {
 
   const activeTaskCount = activeTasks.filter((task) => !task.is_completed).length;
 
+  const filteredNotes = useMemo(() => {
+    if (!searchNeedle) return notes;
+    return notes.filter(note => 
+      (note.title || '').toLowerCase().includes(searchNeedle) || 
+      (note.content || '').toLowerCase().includes(searchNeedle)
+    );
+  }, [notes, searchNeedle]);
+
   const renderMainContent = () => {
     if (view === VIEWS.NOTES) {
       return (
         <NotesView 
-          notes={notes}
+          notes={filteredNotes}
           onDeleteNote={handleDeleteNote}
           onSaveNote={handleSaveNote}
           busy={busy}

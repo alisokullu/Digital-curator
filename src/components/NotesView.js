@@ -36,7 +36,10 @@ function NotesView({ notes, onSaveNote, onDeleteNote, busy }) {
     setEditingId(note.id);
     setDraft({ title: note.title || '', content: note.content });
     setIsExpanding(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // On mobile, scroll to top so the editor is visible without side effects
+    if (window.innerWidth < 640) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -44,7 +47,9 @@ function NotesView({ notes, onSaveNote, onDeleteNote, busy }) {
     const content = editorRef.current?.innerHTML || draft.content;
     const title = titleRef.current?.innerHTML || draft.title;
     
-    if ((!content || content === '<br>') && (!title || title === '<br>')) return;
+    // Clean up empty tags context
+    if ((!content || content === '<br>' || content === '<div><br></div>') && 
+        (!title || title === '<br>' || title === '<div><br></div>')) return;
     
     await onSaveNote(editingId, { title, content });
     setDraft({ title: '', content: '' });
@@ -70,6 +75,11 @@ function NotesView({ notes, onSaveNote, onDeleteNote, busy }) {
     e.preventDefault(); // Prevent focus loss from the editor
     document.execCommand(command, false, value);
     updateActiveStyles();
+    
+    // Ensure the editor keeps focus on mobile after tool click
+    if (editorRef.current) {
+      editorRef.current.focus();
+    }
   };
 
   useEffect(() => {
@@ -83,14 +93,28 @@ function NotesView({ notes, onSaveNote, onDeleteNote, busy }) {
       const handleSelectionChange = () => updateActiveStyles();
       document.addEventListener('selectionchange', handleSelectionChange);
       
-      // Auto-focus the title on expand
-      setTimeout(() => {
-        if (titleRef.current) titleRef.current.focus();
-      }, 100);
+      // Auto-focus the title on expand with a slight delay for transition
+      const timer = setTimeout(() => {
+        if (titleRef.current) {
+          titleRef.current.focus();
+          // Move cursor to end if editing
+          if (editingId) {
+             const range = document.createRange();
+             const sel = window.getSelection();
+             range.selectNodeContents(titleRef.current);
+             range.collapse(false);
+             sel.removeAllRanges();
+             sel.addRange(range);
+          }
+        }
+      }, 300);
 
-      return () => document.removeEventListener('selectionchange', handleSelectionChange);
+      return () => {
+        document.removeEventListener('selectionchange', handleSelectionChange);
+        clearTimeout(timer);
+      };
     }
-  }, [isExpanding, updateActiveStyles]);
+  }, [isExpanding, updateActiveStyles, editingId]);
 
   const formatDate = (dateStr) => {
     const d = new Date(dateStr);
@@ -181,6 +205,12 @@ function NotesView({ notes, onSaveNote, onDeleteNote, busy }) {
               className="note-title-rich"
               data-placeholder={isTr ? 'Başlık (İsteğe bağlı)' : 'Title (Optional)'}
               onInput={e => setDraft({ ...draft, title: e.currentTarget.innerHTML })}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  editorRef.current?.focus();
+                }
+              }}
             />
             <div 
               ref={editorRef}
@@ -206,7 +236,7 @@ function NotesView({ notes, onSaveNote, onDeleteNote, busy }) {
           notes.map(note => (
             <article key={note.id} className="panel-card note-card" onClick={() => handleEdit(note)}>
               <div className="note-card-header">
-                {note.title && note.title !== '<br>' ? (
+                {note.title && note.title !== '<br>' && note.title !== '<div><br></div>' ? (
                    <h3 dangerouslySetInnerHTML={{ __html: note.title }} />
                 ) : (
                    <h3 className="untitled-note">{isTr ? 'Başlıksız' : 'Untitled'}</h3>
@@ -233,10 +263,10 @@ function NotesView({ notes, onSaveNote, onDeleteNote, busy }) {
         ) : (
           !isExpanding && (
             <div className="panel-empty">
-              <h2>{isTr ? 'Henüz notunuz yok' : 'No notes yet'}</h2>
-              <p>{isTr ? 'Düşüncelerinizi kaydetmek için ilk notunuzu oluşturun.' : 'Create your first note to capture your thoughts.'}</p>
+              <h2>{isTr ? 'Not bulunamadı' : 'No notes found'}</h2>
+              <p>{isTr ? 'Aramanızla eşleşen not yok veya henüz hiç not oluşturmadınız.' : 'No notes match your search or you haven\'t created any yet.'}</p>
               <button className="button button-secondary" onClick={handleStartCreate}>
-                {isTr ? 'Şimdi oluştur' : 'Create now'}
+                {isTr ? 'Yeni not oluştur' : 'Create new note'}
               </button>
             </div>
           )
