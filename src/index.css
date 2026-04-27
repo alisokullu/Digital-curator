@@ -1,10 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
 
 :root {
-  --bg: #f4f5f9;
-  --surface: rgba(255, 255, 255, 0.8);
+  --bg: #ffffff;
+  --surface: rgba(255, 255, 255, 0.9);
   --surface-strong: #ffffff;
-  --surface-muted: #e9ecf5;
+  --surface-muted: #f4f6fc;
   --text: #12162b;
   --text-soft: #5b6077;
   --border: rgba(63, 81, 181, 0.14);
@@ -80,7 +80,7 @@ textarea {
   grid-template-columns: 300px minmax(0, 1fr);
   min-height: 100vh;
   width: 100%;
-  background: linear-gradient(to right, var(--surface) 300px, transparent 300px);
+  background: var(--bg);
 }
 
 .sidebar {
