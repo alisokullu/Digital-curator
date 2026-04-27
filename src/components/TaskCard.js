@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { formatDateTime } from '../utils/formatters';
 import { isTr } from '../utils/i18n';
-import { Repeat, Settings2, Clock, Save, X, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Repeat, Settings2, Clock, Save, X, ChevronRight, ChevronLeft, Edit, Trash2 } from 'lucide-react';
 
 function TaskCard({
   editingDraft,
@@ -163,14 +163,16 @@ function TaskCard({
       {!isEditing && !isCustomizing ? (
         <div className="task-actions">
           <button className="button button-secondary" onClick={() => onBeginEdit(task)} title={isTr ? 'Düzenle' : 'Edit'} type="button">
-            {isTr ? 'Düzenle' : 'Edit'}
+            <Edit size={16} />
+            <span>{isTr ? 'Düzenle' : 'Edit'}</span>
           </button>
           <button className="button button-secondary" onClick={() => setIsCustomizing(true)} title={isTr ? 'Özelleştir' : 'Customize'} type="button">
             <Settings2 size={16} />
-            {isTr ? 'Özelleştir' : 'Customize'}
+            <span>{isTr ? 'Özelleştir' : 'Customize'}</span>
           </button>
           <button className="button button-ghost button-danger" onClick={() => onArchiveTask(task)} title={isTr ? 'Arşivle' : 'Archive'} type="button">
-            {isTr ? 'Arşivle' : 'Archive'}
+            <Trash2 size={16} />
+            <span>{isTr ? 'Arşivle' : 'Archive'}</span>
           </button>
         </div>
       ) : null}
