@@ -218,7 +218,8 @@ function DigitalCuratorApp() {
                 title: t.title, 
                 is_completed: t.is_completed,
                 duration_total: t.duration_total || 0,
-                duration_progress: t.duration_progress || 0
+                duration_progress: t.duration_progress || 0,
+                due_date: t.due_date || null
               }))
             });
           }
@@ -650,6 +651,14 @@ function DigitalCuratorApp() {
     );
   };
 
+  const handleUpdateTaskDueDate = async (taskId, dueDate) => {
+    const nextUpdatedAt = stamp();
+    await runMutation(
+      () => supabase.from('tasks').update({ due_date: dueDate || null, updated_at: nextUpdatedAt }).eq('id', taskId),
+      isTr ? 'Son tarih güncellendi.' : 'Due date updated.'
+    );
+  };
+  
   const handleUpdateTaskProgress = async (taskId, progress, isCompleted = false) => {
     const nextUpdatedAt = stamp();
     const payload = { 
@@ -780,6 +789,7 @@ REACT_APP_SUPABASE_ANON_KEY=your-anon-key`}</pre>
           onToggleTask={handleToggleTask}
           onUpdateDuration={handleUpdateTaskDuration}
           onUpdateProgress={handleUpdateTaskProgress}
+          onUpdateDueDate={handleUpdateTaskDueDate}
           tasks={activeTasks}
         />
       </>

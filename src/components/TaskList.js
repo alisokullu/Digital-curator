@@ -11,7 +11,9 @@ function TaskList({
   onSaveEdit,
   onToggleTask,
   onUpdateDuration,
+  onUpdateDuration,
   onUpdateProgress,
+  onUpdateDueDate,
   tasks,
 }) {
   if (!tasks.length) {
@@ -38,6 +40,7 @@ function TaskList({
           onToggleTask={onToggleTask}
           onUpdateDuration={onUpdateDuration}
           onUpdateProgress={onUpdateProgress}
+          onUpdateDueDate={onUpdateDueDate}
           task={task}
         />
       ))}

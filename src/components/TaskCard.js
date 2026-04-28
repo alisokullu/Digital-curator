@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { formatDateTime } from '../utils/formatters';
 import { isTr } from '../utils/i18n';
-import { Repeat, Settings2, Clock, Save, X, ChevronRight, ChevronLeft, Edit, Trash2 } from 'lucide-react';
+import { Repeat, Settings2, Clock, Save, X, ChevronRight, ChevronLeft, Edit, Trash2, Calendar, AlertCircle } from 'lucide-react';
 
 function TaskCard({
   editingDraft,
@@ -14,10 +14,12 @@ function TaskCard({
   onToggleTask,
   onUpdateDuration,
   onUpdateProgress,
+  onUpdateDueDate,
   task,
 }) {
   const [isCustomizing, setIsCustomizing] = useState(false);
   const [tempDuration, setTempDuration] = useState(task.duration_total || 0);
+  const [tempDueDate, setTempDueDate] = useState(task.due_date ? task.due_date.substring(0, 16) : '');
   const [localProgress, setLocalProgress] = useState(task.duration_progress || 0);
 
   // Sync local state with remote state when it changes from outside
@@ -38,6 +40,7 @@ function TaskCard({
 
   const handleDurationSave = () => {
     onUpdateDuration(task.id, parseInt(tempDuration) || 0);
+    onUpdateDueDate(task.id, tempDueDate || null);
     setIsCustomizing(false);
   };
 
@@ -119,6 +122,29 @@ function TaskCard({
                       <span>{isTr ? 'Ayarla' : 'Set'}</span>
                     </button>
                   </div>
+
+                  <div className="customizer-divider" />
+
+                  <div className="customizer-header">
+                    <Calendar size={20} />
+                    <span>{isTr ? 'Son Tarih (Opsiyonel)' : 'Due Date (Optional)'}</span>
+                  </div>
+                  <p>{isTr ? 'Belirtilen tarihe kadar yapılmazsa görev başarısız sayılır.' : 'Task will be marked as failed if not done by this date.'}</p>
+                  
+                  <div className="customizer-input-row">
+                    <input 
+                      type="datetime-local" 
+                      value={tempDueDate} 
+                      onChange={e => setTempDueDate(e.target.value)}
+                      className="date-input"
+                    />
+                    {tempDueDate && (
+                      <button className="button button-ghost button-danger button-sm" onClick={() => setTempDueDate('')} type="button">
+                        {isTr ? 'Kaldır' : 'Remove'}
+                      </button>
+                    )}
+                  </div>
+
                   <button className="modal-close-btn" onClick={() => setIsCustomizing(false)}>
                     <X size={20} />
                   </button>
@@ -155,6 +181,13 @@ function TaskCard({
             )}
 
             <div className="task-meta">
+              {task.due_date && (
+                <span className={`task-due-badge ${!task.is_completed && new Date(task.due_date) < new Date() ? 'task-due-overdue' : ''}`}>
+                  {new Date(task.due_date) < new Date() && !task.is_completed ? <AlertCircle size={12} /> : <Calendar size={12} />}
+                  {formatDateTime(task.due_date)}
+                  {new Date(task.due_date) < new Date() && !task.is_completed && (isTr ? ' (Gecikti)' : ' (Overdue)')}
+                </span>
+              )}
               <span>{task.is_completed ? (isTr ? 'Tamamlandı' : 'Completed') : (isTr ? 'Devam ediyor' : 'In progress')}</span>
               <span>{formatDateTime(task.updated_at || task.created_at)}</span>
               {task.recurrence && task.recurrence !== 'none' && (

@@ -806,6 +806,36 @@ textarea {
   font-size: 1rem;
 }
 
+.customizer-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 0.5rem 0;
+  width: 100%;
+}
+
+.date-input {
+  font-family: inherit;
+  color: var(--text);
+}
+
+.task-due-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--surface-muted);
+  padding: 0.25rem 0.6rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+
+.task-due-overdue {
+  background: rgba(194, 71, 71, 0.1);
+  color: var(--danger);
+  border: 1px solid rgba(194, 71, 71, 0.2);
+}
+
 .task-progress-zone {
   margin: 0.35rem 0;
   padding: 0.8rem 1rem;
