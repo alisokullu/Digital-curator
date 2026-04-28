@@ -13,6 +13,7 @@ function TaskList({
   onUpdateDuration,
   onUpdateProgress,
   onUpdateDueDate,
+  onUpdateSubTasks,
   tasks,
 }) {
   if (!tasks.length) {
@@ -40,6 +41,7 @@ function TaskList({
           onUpdateDuration={onUpdateDuration}
           onUpdateProgress={onUpdateProgress}
           onUpdateDueDate={onUpdateDueDate}
+          onUpdateSubTasks={onUpdateSubTasks}
           task={task}
         />
       ))}

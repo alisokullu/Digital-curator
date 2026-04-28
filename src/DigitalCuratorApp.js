@@ -219,7 +219,8 @@ function DigitalCuratorApp() {
                 is_completed: t.is_completed,
                 duration_total: t.duration_total || 0,
                 duration_progress: t.duration_progress || 0,
-                due_date: t.due_date || null
+                due_date: t.due_date || null,
+                sub_tasks: t.sub_tasks || []
               }))
             });
           }
@@ -659,6 +660,14 @@ function DigitalCuratorApp() {
     );
   };
   
+  const handleUpdateSubTasks = async (taskId, subTasks) => {
+    const nextUpdatedAt = stamp();
+    await runMutation(
+      () => supabase.from('tasks').update({ sub_tasks: subTasks, updated_at: nextUpdatedAt }).eq('id', taskId),
+      null
+    );
+  };
+  
   const handleUpdateTaskProgress = async (taskId, progress, isCompleted = false) => {
     const nextUpdatedAt = stamp();
     const payload = { 
@@ -790,6 +799,7 @@ REACT_APP_SUPABASE_ANON_KEY=your-anon-key`}</pre>
           onUpdateDuration={handleUpdateTaskDuration}
           onUpdateProgress={handleUpdateTaskProgress}
           onUpdateDueDate={handleUpdateTaskDueDate}
+          onUpdateSubTasks={handleUpdateSubTasks}
           tasks={activeTasks}
         />
       </>

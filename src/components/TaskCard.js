@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { formatDateTime } from '../utils/formatters';
 import { isTr } from '../utils/i18n';
-import { Repeat, Settings2, Clock, Save, X, ChevronRight, ChevronLeft, Edit, Trash2, Calendar, AlertCircle } from 'lucide-react';
+import { Repeat, Settings2, Clock, Save, X, ChevronRight, ChevronLeft, Edit, Trash2, Calendar, AlertCircle, ListTodo, Plus, CheckSquare, Square } from 'lucide-react';
 
 function TaskCard({
   editingDraft,
@@ -15,10 +15,13 @@ function TaskCard({
   onUpdateDuration,
   onUpdateProgress,
   onUpdateDueDate,
+  onUpdateSubTasks,
   task,
 }) {
   const [isCustomizing, setIsCustomizing] = useState(false);
   const [tempDuration, setTempDuration] = useState(task.duration_total || 0);
+  const [tempSubTasks, setTempSubTasks] = useState(task.sub_tasks || []);
+  const [newSubTaskTitle, setNewSubTaskTitle] = useState('');
   const formatDateForInput = (dateString) => {
     if (!dateString) return '';
     const d = new Date(dateString);
@@ -51,7 +54,31 @@ function TaskCard({
     const dueDateISO = tempDueDate ? new Date(tempDueDate).toISOString() : null;
     onUpdateDueDate(task.id, dueDateISO);
     
+    onUpdateSubTasks(task.id, tempSubTasks);
+    
     setIsCustomizing(false);
+  };
+  
+  const handleAddSubTask = () => {
+    if (!newSubTaskTitle.trim()) return;
+    const newSub = {
+      id: Math.random().toString(36).substr(2, 9),
+      title: newSubTaskTitle.trim(),
+      is_completed: false
+    };
+    setTempSubTasks([...tempSubTasks, newSub]);
+    setNewSubTaskTitle('');
+  };
+  
+  const handleRemoveSubTask = (id) => {
+    setTempSubTasks(tempSubTasks.filter(s => s.id !== id));
+  };
+  
+  const handleToggleSubTask = (id) => {
+    const nextSubTasks = task.sub_tasks.map(s => 
+      s.id === id ? { ...s, is_completed: !s.is_completed } : s
+    );
+    onUpdateSubTasks(task.id, nextSubTasks);
   };
 
   const handleProgressChange = (val) => {
@@ -155,6 +182,41 @@ function TaskCard({
                     )}
                   </div>
 
+                  <div className="customizer-divider" />
+
+                  <div className="customizer-header">
+                    <ListTodo size={20} />
+                    <span>{isTr ? 'Alt Görevler' : 'Sub-tasks'}</span>
+                  </div>
+                  <p>{isTr ? 'Bu görevi küçük parçalara ayırın.' : 'Break this task into smaller pieces.'}</p>
+                  
+                  <div className="subtasks-editor">
+                    <div className="customizer-input-row">
+                      <input 
+                        type="text" 
+                        value={newSubTaskTitle} 
+                        onChange={e => setNewSubTaskTitle(e.target.value)}
+                        placeholder={isTr ? "Yeni alt görev..." : "New sub-task..."}
+                        onKeyDown={e => e.key === 'Enter' && handleAddSubTask()}
+                      />
+                      <button className="button button-secondary" onClick={handleAddSubTask} type="button">
+                        <Plus size={18} />
+                      </button>
+                    </div>
+                    
+                    <div className="subtasks-temp-list">
+                      {tempSubTasks.map(sub => (
+                        <div key={sub.id} className="subtask-edit-item">
+                          <span>{sub.title}</span>
+                          <button onClick={() => handleRemoveSubTask(sub.id)} className="button-icon-only text-danger">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+
                   <button className="modal-close-btn" onClick={() => setIsCustomizing(false)}>
                     <X size={20} />
                   </button>
@@ -165,6 +227,21 @@ function TaskCard({
               <h3>{task.title}</h3>
               <p>{task.description || (isTr ? 'Henüz açıklama eklenmedi.' : 'No description added yet.')}</p>
             </div>
+
+            {task.sub_tasks && task.sub_tasks.length > 0 && (
+              <div className="task-subtasks-list">
+                {task.sub_tasks.map(sub => (
+                  <div 
+                    key={sub.id} 
+                    className={`subtask-item ${sub.is_completed ? 'subtask-completed' : ''}`}
+                    onClick={(e) => { e.stopPropagation(); handleToggleSubTask(sub.id); }}
+                  >
+                    {sub.is_completed ? <CheckSquare size={14} className="subtask-icon-done" /> : <Square size={14} />}
+                    <span>{sub.title}</span>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {task.duration_total > 0 && (
               <div className="task-progress-zone">
