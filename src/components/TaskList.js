@@ -11,7 +11,6 @@ function TaskList({
   onSaveEdit,
   onToggleTask,
   onUpdateDuration,
-  onUpdateDuration,
   onUpdateProgress,
   onUpdateDueDate,
   tasks,
