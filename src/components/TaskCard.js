@@ -65,7 +65,7 @@ function TaskCard({
         <span />
       </button>
 
-      <div className="task-body">
+      <div className={`task-body ${isCustomizing ? 'task-body-expanded' : ''}`}>
         {isEditing ? (
           <div className="task-editor">
             <input
