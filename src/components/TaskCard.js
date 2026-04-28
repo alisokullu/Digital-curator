@@ -19,7 +19,13 @@ function TaskCard({
 }) {
   const [isCustomizing, setIsCustomizing] = useState(false);
   const [tempDuration, setTempDuration] = useState(task.duration_total || 0);
-  const [tempDueDate, setTempDueDate] = useState(task.due_date ? task.due_date.substring(0, 16) : '');
+  const formatDateForInput = (dateString) => {
+    if (!dateString) return '';
+    const d = new Date(dateString);
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  };
+
+  const [tempDueDate, setTempDueDate] = useState(formatDateForInput(task.due_date));
   const [localProgress, setLocalProgress] = useState(task.duration_progress || 0);
 
   // Sync local state with remote state when it changes from outside
@@ -40,7 +46,11 @@ function TaskCard({
 
   const handleDurationSave = () => {
     onUpdateDuration(task.id, parseInt(tempDuration) || 0);
-    onUpdateDueDate(task.id, tempDueDate || null);
+    
+    // Correctly parse local time and convert to ISO for database
+    const dueDateISO = tempDueDate ? new Date(tempDueDate).toISOString() : null;
+    onUpdateDueDate(task.id, dueDateISO);
+    
     setIsCustomizing(false);
   };
 
