@@ -96,27 +96,35 @@ function TaskCard({
               </button>
             </div>
           </div>
-        ) : isCustomizing ? (
-          <div className="task-customizer">
-             <div className="customizer-header">
-                <Clock size={16} />
-                <span>{isTr ? 'Süre Bazlı Takip' : 'Duration Tracking'}</span>
-             </div>
-             <p>{isTr ? 'Bu görev için bir hedef süre (dakika) belirleyin.' : 'Set a target duration (minutes) for this task.'}</p>
-             <div className="customizer-input-row">
-                <input 
-                  type="number" 
-                  value={tempDuration} 
-                  onChange={e => setTempDuration(e.target.value)}
-                  placeholder="Dakika (ör: 60)"
-                  autoFocus
-                />
-                <button className="button button-primary" onClick={handleDurationSave}><Save size={16}/> {isTr ? 'Ayarla' : 'Set'}</button>
-                <button className="button button-ghost" onClick={() => setIsCustomizing(false)}><X size={16}/></button>
-             </div>
-          </div>
         ) : (
           <>
+            {isCustomizing && (
+              <div className="modal-overlay" onClick={() => setIsCustomizing(false)}>
+                <div className="task-customizer modal-content" onClick={e => e.stopPropagation()}>
+                  <div className="customizer-header">
+                    <Clock size={20} />
+                    <span>{isTr ? 'Süre Bazlı Takip' : 'Duration Tracking'}</span>
+                  </div>
+                  <p>{isTr ? 'Bu görev için bir hedef süre (dakika) belirleyin.' : 'Set a target duration (minutes) for this task.'}</p>
+                  <div className="customizer-input-row">
+                    <input 
+                      type="number" 
+                      value={tempDuration} 
+                      onChange={e => setTempDuration(e.target.value)}
+                      placeholder="60"
+                      autoFocus
+                    />
+                    <button className="button button-primary" onClick={handleDurationSave}>
+                      <Save size={18}/> 
+                      <span>{isTr ? 'Ayarla' : 'Set'}</span>
+                    </button>
+                  </div>
+                  <button className="modal-close-btn" onClick={() => setIsCustomizing(false)}>
+                    <X size={20} />
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="task-copy">
               <h3>{task.title}</h3>
               <p>{task.description || (isTr ? 'Henüz açıklama eklenmedi.' : 'No description added yet.')}</p>

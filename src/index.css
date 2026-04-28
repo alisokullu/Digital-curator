@@ -688,61 +688,114 @@ textarea {
   to { opacity: 1; transform: translateY(0); }
 }
 
-.task-customizer {
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content {
+  background: var(--surface-strong);
+  width: 90%;
+  max-width: 400px;
+  padding: 2rem !important;
+  border-radius: 32px !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+  border: 1px solid var(--border) !important;
+  position: relative;
+  animation: modalSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalSlideIn {
+  from { transform: scale(0.9) translateY(20px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
   background: var(--surface-muted);
-  padding: 1rem;
-  border-radius: 20px;
-  border: 1px dashed var(--brand);
-  animation: slideInCustomizer 0.3s ease-out;
+  color: var(--text-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.modal-close-btn:hover {
+  background: var(--danger);
+  color: white;
+  transform: rotate(90deg);
+}
+
+.task-customizer {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+  gap: 1.25rem;
 }
 
 .customizer-header {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-weight: 800;
+  gap: 0.75rem;
   color: var(--brand);
+}
+
+.customizer-header span {
+  font-weight: 800;
   text-transform: uppercase;
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   letter-spacing: 0.05em;
 }
 
 .task-customizer p {
-  font-size: 0.85rem;
-  margin: 0;
+  font-size: 0.95rem;
   color: var(--text-soft);
+  margin: 0;
+  line-height: 1.5;
 }
 
 .customizer-input-row {
   display: flex;
-  gap: 0.5rem;
-  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
 }
 
 .customizer-input-row input {
   flex: 1;
-  min-width: 0;
-  padding: 0.6rem 0.8rem;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: var(--surface-strong);
-  font-size: 1rem;
-  font-weight: 600;
+  padding: 1rem;
+  border-radius: 16px;
+  border: 2px solid var(--border);
+  background: var(--surface-muted);
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-align: center;
   outline: none;
 }
 
 .customizer-input-row input:focus {
   border-color: var(--brand);
-  box-shadow: 0 0 0 3px var(--brand-soft);
+  background: var(--surface-strong);
+  box-shadow: 0 0 0 4px var(--brand-soft);
 }
 
 .customizer-input-row .button {
-  padding: 0.6rem 1rem;
-  font-size: 0.9rem;
+  padding: 0 1.5rem;
+  border-radius: 16px;
 }
 
 .task-progress-zone {
