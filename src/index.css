@@ -721,7 +721,7 @@ textarea {
   max-width: 420px;
   max-height: 85vh;
   overflow-y: auto;
-  padding: 2.25rem !important;
+  padding: 2.25rem 2.25rem 4rem 2.25rem !important;
   border-radius: 32px !important;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
   border: 1px solid var(--border) !important;
@@ -863,14 +863,29 @@ textarea {
   border: 1px solid rgba(194, 71, 71, 0.2);
 }
 
+.modal-header-premium {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  width: 100%;
+}
+
+.modal-header-premium h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
 .task-subtasks-list {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   margin: 0.5rem 0;
-  padding: 0.75rem;
+  padding: 0.85rem;
   background: var(--surface-muted);
-  border-radius: 16px;
+  border-radius: 18px;
   border: 1px solid var(--border);
 }
 
@@ -880,7 +895,7 @@ textarea {
   gap: 0.6rem;
   font-size: 0.85rem;
   cursor: pointer;
-  padding: 0.25rem 0.5rem;
+  padding: 0.35rem 0.5rem;
   border-radius: 8px;
   transition: all 0.2s ease;
   user-select: none;
@@ -892,7 +907,7 @@ textarea {
 
 .subtask-completed {
   color: var(--text-soft);
-  text-decoration: line-through;
+  opacity: 0.6;
 }
 
 .subtask-icon-done {

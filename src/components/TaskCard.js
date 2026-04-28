@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { formatDateTime } from '../utils/formatters';
 import { isTr } from '../utils/i18n';
-import { Repeat, Settings2, Clock, Save, X, ChevronRight, ChevronLeft, Edit, Trash2, Calendar, AlertCircle, ListTodo, Plus, CheckSquare, Square } from 'lucide-react';
+import { Repeat, Settings2, Clock, Save, X, ChevronRight, ChevronLeft, Edit, Trash2, Calendar, AlertCircle, ListTodo, Plus, CheckSquare, Square, Wand2 } from 'lucide-react';
 
 function TaskCard({
   editingDraft,
@@ -141,6 +141,16 @@ function TaskCard({
             {isCustomizing && (
               <div className="modal-overlay" onClick={() => setIsCustomizing(false)}>
                 <div className="task-customizer modal-content" onClick={e => e.stopPropagation()}>
+                  <div className="modal-header-premium">
+                    <h2>{isTr ? 'Görevi Özelleştir' : 'Customize Task'}</h2>
+                    <button className="button button-primary" onClick={handleDurationSave}>
+                      <Wand2 size={18}/> 
+                      <span>{isTr ? 'Ayarla' : 'Set'}</span>
+                    </button>
+                  </div>
+
+                  <div className="customizer-divider" />
+
                   <div className="customizer-header">
                     <Clock size={20} />
                     <span>{isTr ? 'Süre Bazlı Takip' : 'Duration Tracking'}</span>
@@ -154,10 +164,6 @@ function TaskCard({
                       placeholder="60"
                       autoFocus
                     />
-                    <button className="button button-primary" onClick={handleDurationSave}>
-                      <Save size={18}/> 
-                      <span>{isTr ? 'Ayarla' : 'Set'}</span>
-                    </button>
                   </div>
 
                   <div className="customizer-divider" />
