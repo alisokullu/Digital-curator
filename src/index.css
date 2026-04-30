@@ -1065,6 +1065,51 @@ textarea {
   border-radius: 24px;
   background: var(--surface);
   box-shadow: var(--shadow);
+  position: relative;
+  cursor: default;
+}
+
+.stat-tooltip {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  z-index: 100;
+  width: max-content;
+  max-width: 250px;
+  transition: all 0.2s ease;
+  pointer-events: none;
+}
+
+.stat-card:hover .stat-tooltip {
+  visibility: visible;
+  opacity: 1;
+  transform: translateX(-50%) translateY(5px);
+}
+
+.stat-tooltip ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  color: var(--text-soft);
+  text-align: left;
+}
+
+.stat-tooltip li {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .stat-card span {

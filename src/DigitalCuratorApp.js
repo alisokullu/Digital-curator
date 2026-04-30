@@ -329,12 +329,14 @@ function DigitalCuratorApp() {
 
   const stats = useMemo(() => {
     const total = allTasks.length;
-    const active = allTasks.filter((task) => !task.is_archived);
-    const completed = active.filter((task) => task.is_completed).length;
-    const remaining = active.filter((task) => !task.is_completed).length;
+    const activeTasksList = allTasks.filter((task) => !task.is_archived);
+    const completedTasksList = activeTasksList.filter((task) => task.is_completed);
+    const completed = completedTasksList.length;
+    const remaining = activeTasksList.filter((task) => !task.is_completed).length;
     const archived = allTasks.filter((task) => task.is_archived).length;
-    const completionRate = active.length ? Math.round((completed / active.length) * 100) : 0;
-    const totalRoutines = active.filter((task) => task.recurrence && task.recurrence !== 'none').length;
+    const completionRate = activeTasksList.length ? Math.round((completed / activeTasksList.length) * 100) : 0;
+    const routinesList = activeTasksList.filter((task) => task.recurrence && task.recurrence !== 'none');
+    const totalRoutines = routinesList.length;
 
     const byFolder = folders.map((folder) => {
       const folderTasks = allTasks.filter((task) => task.folder_id === folder.id && !task.is_archived);
@@ -351,12 +353,15 @@ function DigitalCuratorApp() {
 
     return {
       total,
-      active: active.length,
+      active: activeTasksList.length,
+      activeTasksList,
       completed,
+      completedTasksList,
       remaining,
       archived,
       completionRate,
       totalRoutines,
+      routinesList,
       byFolder,
     };
   }, [allTasks, folders]);

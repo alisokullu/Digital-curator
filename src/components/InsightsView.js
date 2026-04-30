@@ -1,11 +1,19 @@
 import { useState, useMemo } from 'react';
 import { isTr } from '../utils/i18n';
 
-function StatCard({ label, value, tone = 'default' }) {
+function StatCard({ label, value, tone = 'default', taskList = null }) {
   return (
     <article className={`stat-card stat-card-${tone}`}>
       <span>{label}</span>
       <strong>{value}</strong>
+      {taskList && taskList.length > 0 && (
+        <div className="stat-tooltip">
+          <ul>
+            {taskList.slice(0, 5).map(t => <li key={t.id}>{t.title}</li>)}
+            {taskList.length > 5 && <li>{isTr ? `... ve ${taskList.length - 5} daha` : `... and ${taskList.length - 5} more`}</li>}
+          </ul>
+        </div>
+      )}
     </article>
   );
 }
@@ -57,10 +65,9 @@ function InsightsView({ activeFolder, folders, stats, history = [] }) {
     <section className="insights-view">
       <div className="stats-grid">
         <StatCard label={isTr ? "Tamamlama oranı" : "Completion rate"} tone="brand" value={`${stats.completionRate}%`} />
-        <StatCard label={isTr ? "Aktif rutinler" : "Active routines"} value={stats.totalRoutines} />
-        <StatCard label={isTr ? "Aktif görevler" : "Active tasks"} value={stats.active} />
-        <StatCard label={isTr ? "Tamamlandı" : "Completed"} value={stats.completed} />
-        <StatCard label={isTr ? "Arşivlendi" : "Archived"} tone="muted" value={stats.archived} />
+        <StatCard label={isTr ? "Aktif rutinler" : "Active routines"} value={stats.totalRoutines} taskList={stats.routinesList} />
+        <StatCard label={isTr ? "Aktif görevler" : "Active tasks"} value={stats.active} taskList={stats.activeTasksList} />
+        <StatCard label={isTr ? "Tamamlandı" : "Completed"} value={stats.completed} taskList={stats.completedTasksList} />
       </div>
 
       <div className="insights-layout">
