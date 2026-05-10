@@ -796,6 +796,24 @@ function DigitalCuratorApp() {
     }
   };
 
+  const handleEditWord = async (draft) => {
+    const payload = {
+      english: draft.english,
+      turkish: draft.turkish,
+      meaning: draft.meaning || null,
+      example: draft.example || null,
+    };
+
+    const res = await runMutation(
+      () => supabase.from('vocabulary').update(payload).eq('id', draft.id),
+      isTr ? 'Kelime güncellendi.' : 'Word updated.'
+    );
+
+    if (res) {
+      setVocabulary(c => c.map(w => w.id === draft.id ? { ...w, ...payload } : w));
+    }
+  };
+
   const handleDeleteWord = async (wordId) => {
     if (!window.confirm(isTr ? 'Bu kelimeyi silmek istediğinize emin misiniz?' : 'Delete this word?')) return;
     const res = await runMutation(
@@ -835,6 +853,7 @@ function DigitalCuratorApp() {
           vocabulary={vocabulary}
           onAddWord={handleAddWord}
           onDeleteWord={handleDeleteWord}
+          onEditWord={handleEditWord}
           isRoutineEnabled={isVocabRoutineEnabled}
           onToggleRoutine={handleToggleVocabRoutine}
           busy={busy}

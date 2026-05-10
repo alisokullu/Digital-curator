@@ -1,15 +1,17 @@
 import { useState, useMemo } from 'react';
-import { Book, Plus, Trash2, RefreshCw, CheckCircle, Circle } from 'lucide-react';
+import { Book, Plus, Trash2, RefreshCw, CheckCircle, Circle, Edit3, X, Save } from 'lucide-react';
 
-function VocabularyView({ vocabulary, onAddWord, onDeleteWord, isRoutineEnabled, onToggleRoutine, busy }) {
+function VocabularyView({ vocabulary, onAddWord, onDeleteWord, onEditWord, isRoutineEnabled, onToggleRoutine, busy }) {
   const lang = localStorage.getItem('digital-curator-lang') || 'tr';
   const isTr = lang === 'tr';
 
-  const [draft, setDraft] = useState({ english: '', turkish: '', meaning: '', example: '' });
+  const [draft, setDraft] = useState({ id: null, english: '', turkish: '', meaning: '', example: '' });
   const [flipped, setFlipped] = useState(new Set());
   const [shuffleKey, setShuffleKey] = useState(0);
 
   const shuffledVocab = useMemo(() => {
+    if (shuffleKey === 0) return vocabulary;
+
     // Create a shuffled copy
     const copy = [...vocabulary];
     for (let i = copy.length - 1; i > 0; i--) {
@@ -24,8 +26,29 @@ function VocabularyView({ vocabulary, onAddWord, onDeleteWord, isRoutineEnabled,
     e.preventDefault();
     if (!draft.english.trim() || !draft.turkish.trim()) return;
     
-    await onAddWord(draft);
-    setDraft({ english: '', turkish: '', meaning: '', example: '' });
+    if (draft.id) {
+      await onEditWord(draft);
+    } else {
+      await onAddWord(draft);
+    }
+    setDraft({ id: null, english: '', turkish: '', meaning: '', example: '' });
+  };
+
+  const handleEditClick = (e, word) => {
+    e.stopPropagation();
+    setDraft({
+      id: word.id,
+      english: word.english,
+      turkish: word.turkish,
+      meaning: word.meaning || '',
+      example: word.example || ''
+    });
+    // Scroll to top where the form is
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCancelEdit = () => {
+    setDraft({ id: null, english: '', turkish: '', meaning: '', example: '' });
   };
 
   const toggleFlip = (id) => {
@@ -69,8 +92,9 @@ function VocabularyView({ vocabulary, onAddWord, onDeleteWord, isRoutineEnabled,
             onClick={onToggleRoutine}
             disabled={busy}
             type="button"
+            style={{ color: isRoutineEnabled ? 'var(--brand)' : 'var(--text)' }}
           >
-            {isRoutineEnabled ? <CheckCircle size={20} className="text-green" /> : <Circle size={20} className="text-soft" />}
+            {isRoutineEnabled ? <CheckCircle size={20} /> : <Circle size={20} />}
           </button>
         </div>
       </div>
@@ -79,7 +103,14 @@ function VocabularyView({ vocabulary, onAddWord, onDeleteWord, isRoutineEnabled,
         
         {/* Form Column */}
         <div className="vocab-form-panel" style={{ background: 'var(--bg-elevated)', padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--border)', position: 'sticky', top: '2rem' }}>
-          <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>{isTr ? 'Yeni Kelime Ekle' : 'Add New Word'}</h3>
+          <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            {draft.id ? (isTr ? 'Kelimeyi Düzenle' : 'Edit Word') : (isTr ? 'Yeni Kelime Ekle' : 'Add New Word')}
+            {draft.id && (
+              <button onClick={handleCancelEdit} type="button" className="button button-ghost" style={{ padding: '0.4rem' }}>
+                <X size={16} />
+              </button>
+            )}
+          </h3>
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div className="form-group">
               <label>{isTr ? 'İngilizce' : 'English'}</label>
@@ -108,7 +139,7 @@ function VocabularyView({ vocabulary, onAddWord, onDeleteWord, isRoutineEnabled,
                 onChange={e => setDraft({...draft, meaning: e.target.value})}
                 placeholder="e.g. The occurrence and development of events by chance in a happy or beneficial way."
                 className="vocab-input"
-                rows={2}
+                rows={4}
               />
             </div>
             <div className="form-group">
@@ -122,8 +153,8 @@ function VocabularyView({ vocabulary, onAddWord, onDeleteWord, isRoutineEnabled,
               />
             </div>
             <button type="submit" className="button button-primary" disabled={busy || !draft.english || !draft.turkish} style={{ marginTop: '0.5rem' }}>
-              <Plus size={18} />
-              {isTr ? 'Kelimeyi Ekle' : 'Add Word'}
+              {draft.id ? <Save size={18} /> : <Plus size={18} />}
+              {draft.id ? (isTr ? 'Kaydet' : 'Save Changes') : (isTr ? 'Kelimeyi Ekle' : 'Add Word')}
             </button>
           </form>
         </div>
@@ -156,16 +187,25 @@ function VocabularyView({ vocabulary, onAddWord, onDeleteWord, isRoutineEnabled,
                     <div className="flashcard-front">
                       <h2 className="flashcard-word-en">{word.english}</h2>
                       <span className="flashcard-hint">{isTr ? 'Çevirmek için tıkla' : 'Click to flip'}</span>
-                      <button 
-                        className="flashcard-delete-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteWord(word.id);
-                        }}
-                        aria-label="Delete"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      <div style={{ position: 'absolute', top: '1rem', right: '1rem', display: 'flex', gap: '0.5rem' }}>
+                        <button 
+                          className="flashcard-action-btn"
+                          onClick={(e) => handleEditClick(e, word)}
+                          aria-label="Edit"
+                        >
+                          <Edit3 size={16} />
+                        </button>
+                        <button 
+                          className="flashcard-action-btn flashcard-delete"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteWord(word.id);
+                          }}
+                          aria-label="Delete"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
                     <div className="flashcard-back">
                       <h2 className="flashcard-word-tr">{word.turkish}</h2>

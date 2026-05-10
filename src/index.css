@@ -2410,10 +2410,7 @@ textarea {
   line-height: 1.3;
 }
 
-.flashcard-delete-btn {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
+.flashcard-action-btn {
   background: transparent;
   border: none;
   color: var(--text-soft);
@@ -2424,11 +2421,16 @@ textarea {
   border-radius: 8px;
 }
 
-.flashcard-container:hover .flashcard-delete-btn {
+.flashcard-container:hover .flashcard-action-btn {
   opacity: 1;
 }
 
-.flashcard-delete-btn:hover {
+.flashcard-action-btn:hover {
+  background: var(--surface-muted);
+  color: var(--text);
+}
+
+.flashcard-action-btn.flashcard-delete:hover {
   background: var(--danger);
   color: white;
 }
