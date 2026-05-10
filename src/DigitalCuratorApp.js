@@ -8,6 +8,7 @@ import TaskComposer from './components/TaskComposer';
 import TaskList from './components/TaskList';
 import AuthScreen from './components/AuthScreen';
 import NotesView from './components/NotesView';
+import VocabularyView from './components/VocabularyView';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 
 const VIEWS = {
@@ -15,6 +16,7 @@ const VIEWS = {
   INSIGHTS: 'insights',
   ARCHIVE: 'archive',
   NOTES: 'notes',
+  VOCABULARY: 'vocabulary',
 };
 
 const THEME_KEY = 'digital-curator-theme';
@@ -50,6 +52,8 @@ function DigitalCuratorApp() {
   const [session, setSession] = useState(null);
   const [history, setHistory] = useState([]);
   const [notes, setNotes] = useState([]);
+  const [vocabulary, setVocabulary] = useState([]);
+  const [isVocabRoutineEnabled, setIsVocabRoutineEnabled] = useState(() => localStorage.getItem('dc-vocab-routine') === 'true');
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -114,6 +118,10 @@ function DigitalCuratorApp() {
           .from('notes')
           .select('*')
           .order('updated_at', { ascending: false }),
+        supabase
+          .from('vocabulary')
+          .select('*')
+          .order('created_at', { ascending: false })
       ]);
 
       if (cancelled) {
@@ -132,6 +140,8 @@ function DigitalCuratorApp() {
       const nextTasks = taskResponse.data || [];
       const nextHistory = historyResponse.data || [];
       const nextNotes = notesResponse.data || [];
+      // we check for vocabulary error separately in case the table doesn't exist yet
+      const nextVocabulary = (arguments[0] && !arguments[0].error && folderResponse.data && taskResponse.data && historyResponse.data && notesResponse.data) ? (await supabase.from('vocabulary').select('*').order('created_at', { ascending: false })).data || [] : [];
 
       // Routine Automation Engine + History Snapshot
       const now = new Date();
@@ -252,6 +262,7 @@ function DigitalCuratorApp() {
       setAllTasks(nextTasks);
       setHistory(nextHistory);
       setNotes(nextNotes);
+      setVocabulary(nextVocabulary);
       setActiveFolderId((currentId) => {
         if (nextFolders.length === 0) {
           return null;
@@ -276,6 +287,7 @@ function DigitalCuratorApp() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, () => loadAll(false))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'task_history' }, () => loadAll(false))
       .on('postgres_changes', { event: '*', schema: 'public', table: 'notes' }, () => loadAll(false))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'vocabulary' }, () => loadAll(false))
       .subscribe();
 
     return () => {
@@ -723,6 +735,78 @@ function DigitalCuratorApp() {
     );
   };
 
+  const handleToggleVocabRoutine = async () => {
+    const nextState = !isVocabRoutineEnabled;
+    setIsVocabRoutineEnabled(nextState);
+    localStorage.setItem('dc-vocab-routine', nextState.toString());
+    
+    // If enabling, ensure we have a daily task
+    if (nextState && activeFolderId) {
+      const routineTitle = 'Günlük 3 İngilizce Kelime';
+      const existing = allTasks.find(t => t.title === routineTitle && t.recurrence === 'daily');
+      if (!existing) {
+        const payload = {
+          folder_id: activeFolderId,
+          title: routineTitle,
+          description: 'Her gün 3 yeni kelime ekle.',
+          is_completed: false,
+          is_archived: false,
+          updated_at: stamp(),
+          user_id: session.user.id,
+          recurrence: 'daily',
+        };
+        const res = await supabase.from('tasks').insert([payload]).select('*, folders(name)').single();
+        if (res.data) setAllTasks(c => [res.data, ...c]);
+      }
+    }
+  };
+
+  const handleAddWord = async (draft) => {
+    const payload = {
+      english: draft.english,
+      turkish: draft.turkish,
+      meaning: draft.meaning || null,
+      example: draft.example || null,
+      user_id: session.user.id,
+    };
+
+    const res = await runMutation(
+      () => supabase.from('vocabulary').insert([payload]).select().single(),
+      isTr ? 'Kelime eklendi.' : 'Word added.'
+    );
+
+    if (res?.data) {
+      const newVocab = [res.data, ...vocabulary];
+      setVocabulary(newVocab);
+
+      // Check daily routine
+      if (isVocabRoutineEnabled) {
+        const today = new Date().toISOString().split('T')[0];
+        const addedToday = newVocab.filter(v => v.created_at && v.created_at.startsWith(today)).length;
+        
+        if (addedToday === 3) {
+          const routineTitle = 'Günlük 3 İngilizce Kelime';
+          const existing = allTasks.find(t => t.title === routineTitle && t.recurrence === 'daily' && !t.is_completed);
+          if (existing) {
+            handleToggleTask(existing); // Complete it
+            setTransientMessage(setNotice, isTr ? 'Günlük kelime hedefinize ulaştınız!' : 'Daily word goal reached!');
+          }
+        }
+      }
+    }
+  };
+
+  const handleDeleteWord = async (wordId) => {
+    if (!window.confirm(isTr ? 'Bu kelimeyi silmek istediğinize emin misiniz?' : 'Delete this word?')) return;
+    const res = await runMutation(
+      () => supabase.from('vocabulary').delete().eq('id', wordId),
+      isTr ? 'Kelime silindi.' : 'Word deleted.'
+    );
+    if (res) {
+      setVocabulary(c => c.filter(w => w.id !== wordId));
+    }
+  };
+
   const activeTaskCount = activeTasks.filter((task) => !task.is_completed).length;
 
   const filteredNotes = useMemo(() => {
@@ -740,6 +824,19 @@ function DigitalCuratorApp() {
           notes={filteredNotes}
           onDeleteNote={handleDeleteNote}
           onSaveNote={handleSaveNote}
+          busy={busy}
+        />
+      );
+    }
+
+    if (view === VIEWS.VOCABULARY) {
+      return (
+        <VocabularyView
+          vocabulary={vocabulary}
+          onAddWord={handleAddWord}
+          onDeleteWord={handleDeleteWord}
+          isRoutineEnabled={isVocabRoutineEnabled}
+          onToggleRoutine={handleToggleVocabRoutine}
           busy={busy}
         />
       );
