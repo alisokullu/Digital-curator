@@ -17,6 +17,8 @@ function TaskCard({
   onUpdateDueDate,
   onUpdateSubTasks,
   task,
+  onDragOver,
+  onDrop,
 }) {
   const [isCustomizing, setIsCustomizing] = useState(false);
   const [tempDuration, setTempDuration] = useState(task.duration_total || 0);
@@ -94,8 +96,24 @@ function TaskCard({
 
   const progressPct = task.duration_total ? Math.min(100, Math.round((localProgress / task.duration_total) * 100)) : 0;
 
+  const createdStr = formatDateTime(task.created_at);
+  const updatedStr = formatDateTime(task.updated_at);
+  const showUpdated = task.updated_at && task.updated_at !== task.created_at;
+
   return (
-    <article className={`task-card ${task.is_completed ? 'task-card-complete' : ''} ${isCustomizing ? 'task-card-customizing' : ''}`}>
+    <article 
+      className={`task-card ${task.is_completed ? 'task-card-complete' : ''} ${isCustomizing ? 'task-card-customizing' : ''}`}
+      draggable={!task.is_completed && !isEditing && !isCustomizing}
+      onDragStart={(e) => {
+        e.dataTransfer.setData('text/plain', task.id);
+        e.currentTarget.style.opacity = '0.5';
+      }}
+      onDragEnd={(e) => {
+        e.currentTarget.style.opacity = '1';
+      }}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+    >
       <button
         aria-label={task.is_completed ? (isTr ? `${task.title} görevini aç` : `Mark ${task.title} as open`) : (isTr ? `${task.title} görevini tamamla` : `Mark ${task.title} as complete`)}
         className={`task-check ${task.is_completed ? 'task-check-active' : ''}`}
@@ -282,7 +300,14 @@ function TaskCard({
                 </span>
               )}
               <span>{task.is_completed ? (isTr ? 'Tamamlandı' : 'Completed') : (isTr ? 'Devam ediyor' : 'In progress')}</span>
-              <span>{formatDateTime(task.updated_at || task.created_at)}</span>
+              <span style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                <span>{isTr ? 'Oluşturulma:' : 'Created:'} {createdStr}</span>
+                {showUpdated && (
+                  <span style={{ opacity: 0.8, fontStyle: 'italic' }}>
+                    {task.is_completed ? (isTr ? `(Tamamlanma: ${updatedStr})` : `(Finished: ${updatedStr})`) : (isTr ? `(Güncellendi: ${updatedStr})` : `(Updated: ${updatedStr})`)}
+                  </span>
+                )}
+              </span>
               {task.recurrence && task.recurrence !== 'none' && (
                 <span className="task-routine-badge">
                   <Repeat size={12} />

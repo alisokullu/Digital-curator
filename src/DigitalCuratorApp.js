@@ -107,8 +107,8 @@ function DigitalCuratorApp() {
         supabase
           .from('tasks')
           .select('*, folders(name)')
-          .order('updated_at', { ascending: false, nullsFirst: false })
-          .order('created_at', { ascending: false }),
+          .order('sort_order', { ascending: true, nullsFirst: true })
+          .order('updated_at', { ascending: false, nullsFirst: false }),
         supabase
           .from('task_history')
           .select('*')
@@ -310,12 +310,19 @@ function DigitalCuratorApp() {
           (task) =>
             task.folder_id === activeFolderId &&
             !task.is_archived &&
+            task.title !== 'Günlük 3 İngilizce Kelime' &&
             (!searchNeedle ||
               task.title.toLowerCase().includes(searchNeedle) ||
               (task.description || '').toLowerCase().includes(searchNeedle))
         )
         .sort((a, b) => {
-          if (a.is_completed === b.is_completed) return 0;
+          if (a.is_completed === b.is_completed) {
+            const orderA = typeof a.sort_order === 'number' ? a.sort_order : 999999;
+            const orderB = typeof b.sort_order === 'number' ? b.sort_order : 999999;
+            if (orderA !== orderB) return orderA - orderB;
+            // Fallback to updated_at
+            return new Date(b.updated_at || 0) - new Date(a.updated_at || 0);
+          }
           return a.is_completed ? 1 : -1;
         }),
     [allTasks, activeFolderId, searchNeedle]
@@ -327,6 +334,7 @@ function DigitalCuratorApp() {
         .filter(
           (task) =>
             task.is_archived &&
+            task.title !== 'Günlük 3 İngilizce Kelime' &&
             (!searchNeedle ||
               task.title.toLowerCase().includes(searchNeedle) ||
               (task.description || '').toLowerCase().includes(searchNeedle) ||
@@ -796,6 +804,31 @@ function DigitalCuratorApp() {
     }
   };
 
+  const handleReorderTasks = (dragId, targetId) => {
+    const tasksToReorder = activeTasks.filter(t => !t.is_completed);
+    const dragIndex = tasksToReorder.findIndex(t => t.id === dragId);
+    const targetIndex = tasksToReorder.findIndex(t => t.id === targetId);
+    
+    if (dragIndex === -1 || targetIndex === -1 || dragIndex === targetIndex) return;
+
+    const newOrder = [...tasksToReorder];
+    const [dragItem] = newOrder.splice(dragIndex, 1);
+    newOrder.splice(targetIndex, 0, dragItem);
+
+    const updates = newOrder.map((t, index) => ({ id: t.id, sort_order: index }));
+    
+    setAllTasks(current => current.map(task => {
+      const update = updates.find(u => u.id === task.id);
+      if (update) return { ...task, sort_order: update.sort_order };
+      return task;
+    }));
+
+    // Async update to Supabase
+    updates.forEach(u => {
+      supabase.from('tasks').update({ sort_order: u.sort_order }).eq('id', u.id).then();
+    });
+  };
+
   const handleEditWord = async (draft) => {
     const payload = {
       english: draft.english,
@@ -921,6 +954,7 @@ REACT_APP_SUPABASE_ANON_KEY=your-anon-key`}</pre>
           onUpdateProgress={handleUpdateTaskProgress}
           onUpdateDueDate={handleUpdateTaskDueDate}
           onUpdateSubTasks={handleUpdateSubTasks}
+          onReorderTasks={handleReorderTasks}
           tasks={activeTasks}
         />
       </>

@@ -14,8 +14,20 @@ function TaskList({
   onUpdateProgress,
   onUpdateDueDate,
   onUpdateSubTasks,
+  onReorderTasks,
   tasks,
 }) {
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e, targetTaskId) => {
+    e.preventDefault();
+    const dragId = e.dataTransfer.getData('text/plain');
+    if (dragId && dragId !== targetTaskId && onReorderTasks) {
+      onReorderTasks(dragId, targetTaskId);
+    }
+  };
   if (!tasks.length) {
     return (
       <section className="panel-empty">
@@ -43,6 +55,8 @@ function TaskList({
           onUpdateDueDate={onUpdateDueDate}
           onUpdateSubTasks={onUpdateSubTasks}
           task={task}
+          onDragOver={handleDragOver}
+          onDrop={(e) => handleDrop(e, task.id)}
         />
       ))}
     </section>
