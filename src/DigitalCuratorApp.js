@@ -748,9 +748,9 @@ function DigitalCuratorApp() {
     setIsVocabRoutineEnabled(nextState);
     localStorage.setItem('dc-vocab-routine', nextState.toString());
     
-    // If enabling, ensure we have a daily task
+    const routineTitle = 'Günlük 3 İngilizce Kelime';
+
     if (nextState && activeFolderId) {
-      const routineTitle = 'Günlük 3 İngilizce Kelime';
       const existing = allTasks.find(t => t.title === routineTitle && t.recurrence === 'daily');
       if (!existing) {
         const payload = {
@@ -765,6 +765,13 @@ function DigitalCuratorApp() {
         };
         const res = await supabase.from('tasks').insert([payload]).select('*, folders(name)').single();
         if (res.data) setAllTasks(c => [res.data, ...c]);
+      } else if (existing.is_archived) {
+        handleRestoreTask(existing);
+      }
+    } else if (!nextState) {
+      const existing = allTasks.find(t => t.title === routineTitle && t.recurrence === 'daily' && !t.is_archived);
+      if (existing) {
+        handleArchiveTask(existing);
       }
     }
   };
