@@ -20,6 +20,8 @@ const VIEWS = {
 };
 
 const THEME_KEY = 'digital-curator-theme';
+const VOCAB_ROUTINE_TITLE = 'Günlük 3 İngilizce Kelime';
+const VOCAB_ROUTINE_TARGET = 3;
 
 const formatError = (error, fallback) => error?.message || fallback;
 
@@ -31,6 +33,12 @@ const getLocalISODate = (date = new Date()) => {
   const localDate = new Date(d.getTime() - z);
   return localDate.toISOString().split('T')[0];
 };
+
+const getVocabularyCountForDate = (words, dateString = getLocalISODate()) =>
+  words.filter((word) => word.created_at && getLocalISODate(word.created_at) === dateString).length;
+
+const isVocabularyRoutineTask = (task) =>
+  task.title === VOCAB_ROUTINE_TITLE && task.recurrence === 'daily';
 
 function DigitalCuratorApp() {
   const [view, setView] = useState(() => localStorage.getItem('dc-last-view') || VIEWS.TASKS);
@@ -137,11 +145,32 @@ function DigitalCuratorApp() {
       }
 
       const nextFolders = folderResponse.data || [];
-      const nextTasks = taskResponse.data || [];
-      const nextHistory = historyResponse.data || [];
+      let nextTasks = taskResponse.data || [];
+      let nextHistory = historyResponse.data || [];
       const nextNotes = notesResponse.data || [];
       // we check for vocabulary error separately in case the table doesn't exist yet
       const nextVocabulary = (arguments[0] && !arguments[0].error && folderResponse.data && taskResponse.data && historyResponse.data && notesResponse.data) ? (await supabase.from('vocabulary').select('*').order('created_at', { ascending: false })).data || [] : [];
+
+      nextHistory = nextHistory.map((item) => {
+        if (
+          item.period_type !== 'daily' ||
+          getVocabularyCountForDate(nextVocabulary, item.period_date) < VOCAB_ROUTINE_TARGET ||
+          !Array.isArray(item.tasks_snapshot) ||
+          !item.tasks_snapshot.some((task) => isVocabularyRoutineTask(task) && !task.is_completed)
+        ) {
+          return item;
+        }
+
+        const tasksSnapshot = item.tasks_snapshot.map((task) =>
+          isVocabularyRoutineTask(task) ? { ...task, is_completed: true } : task
+        );
+
+        return {
+          ...item,
+          completed_count: tasksSnapshot.filter((task) => task.is_completed).length,
+          tasks_snapshot: tasksSnapshot,
+        };
+      });
 
       // Routine Automation Engine + History Snapshot
       const now = new Date();
@@ -172,7 +201,6 @@ function DigitalCuratorApp() {
 
         tasks.forEach(task => {
           const updated = new Date(task.updated_at);
-          const created = new Date(task.created_at);
           let nextResetTime = null;
           let currentPeriodStart = null;
 
@@ -215,7 +243,21 @@ function DigitalCuratorApp() {
           );
 
           if (!alreadyRecorded) {
-            const completed = tasks.filter(t => t.is_completed).length;
+            const tasksSnapshot = tasks.map(t => {
+              const completedByVocabulary =
+                isVocabularyRoutineTask(t) &&
+                getVocabularyCountForDate(nextVocabulary, periodDateStr) >= VOCAB_ROUTINE_TARGET;
+
+              return {
+                title: t.title,
+                is_completed: t.is_completed || completedByVocabulary,
+                duration_total: t.duration_total || 0,
+                duration_progress: t.duration_progress || 0,
+                due_date: t.due_date || null,
+                sub_tasks: t.sub_tasks || []
+              };
+            });
+            const completed = tasksSnapshot.filter(t => t.is_completed).length;
             historySnapshots.push({
               user_id: session.user.id,
               folder_id: folderId,
@@ -224,14 +266,7 @@ function DigitalCuratorApp() {
               period_type: recurrence,
               completed_count: completed,
               total_count: tasks.length,
-              tasks_snapshot: tasks.map(t => ({ 
-                title: t.title, 
-                is_completed: t.is_completed,
-                duration_total: t.duration_total || 0,
-                duration_progress: t.duration_progress || 0,
-                due_date: t.due_date || null,
-                sub_tasks: t.sub_tasks || []
-              }))
+              tasks_snapshot: tasksSnapshot
             });
           }
         }
@@ -256,6 +291,25 @@ function DigitalCuratorApp() {
           duration_progress: 0, 
           updated_at: now.toISOString() 
         }).in('id', routineUpdates).then();
+      }
+
+      const completedVocabularyRoutineIds = [];
+      if (getVocabularyCountForDate(nextVocabulary) >= VOCAB_ROUTINE_TARGET) {
+        const completedAt = stamp();
+        nextTasks = nextTasks.map((task) => {
+          if (isVocabularyRoutineTask(task) && !task.is_archived && !task.is_completed) {
+            completedVocabularyRoutineIds.push(task.id);
+            return { ...task, is_completed: true, updated_at: completedAt };
+          }
+          return task;
+        });
+        if (completedVocabularyRoutineIds.length > 0) {
+          supabase
+            .from('tasks')
+            .update({ is_completed: true, updated_at: completedAt })
+            .in('id', completedVocabularyRoutineIds)
+            .then();
+        }
       }
 
       setFolders(nextFolders);
@@ -310,7 +364,7 @@ function DigitalCuratorApp() {
           (task) =>
             task.folder_id === activeFolderId &&
             !task.is_archived &&
-            task.title !== 'Günlük 3 İngilizce Kelime' &&
+            task.title !== VOCAB_ROUTINE_TITLE &&
             (!searchNeedle ||
               task.title.toLowerCase().includes(searchNeedle) ||
               (task.description || '').toLowerCase().includes(searchNeedle))
@@ -334,7 +388,7 @@ function DigitalCuratorApp() {
         .filter(
           (task) =>
             task.is_archived &&
-            task.title !== 'Günlük 3 İngilizce Kelime' &&
+            task.title !== VOCAB_ROUTINE_TITLE &&
             (!searchNeedle ||
               task.title.toLowerCase().includes(searchNeedle) ||
               (task.description || '').toLowerCase().includes(searchNeedle) ||
@@ -748,7 +802,7 @@ function DigitalCuratorApp() {
     setIsVocabRoutineEnabled(nextState);
     localStorage.setItem('dc-vocab-routine', nextState.toString());
     
-    const routineTitle = 'Günlük 3 İngilizce Kelime';
+    const routineTitle = VOCAB_ROUTINE_TITLE;
 
     if (nextState && activeFolderId) {
       const existing = allTasks.find(t => t.title === routineTitle && t.recurrence === 'daily');
@@ -796,12 +850,11 @@ function DigitalCuratorApp() {
 
       // Check daily routine
       if (isVocabRoutineEnabled) {
-        const today = new Date().toISOString().split('T')[0];
-        const addedToday = newVocab.filter(v => v.created_at && v.created_at.startsWith(today)).length;
+        const addedToday = getVocabularyCountForDate(newVocab);
         
-        if (addedToday === 3) {
-          const routineTitle = 'Günlük 3 İngilizce Kelime';
-          const existing = allTasks.find(t => t.title === routineTitle && t.recurrence === 'daily' && !t.is_completed);
+        if (addedToday >= VOCAB_ROUTINE_TARGET) {
+          const routineTitle = VOCAB_ROUTINE_TITLE;
+          const existing = allTasks.find(t => t.title === routineTitle && t.recurrence === 'daily' && !t.is_archived && !t.is_completed);
           if (existing) {
             handleToggleTask(existing); // Complete it
             setTransientMessage(setNotice, isTr ? 'Günlük kelime hedefinize ulaştınız!' : 'Daily word goal reached!');

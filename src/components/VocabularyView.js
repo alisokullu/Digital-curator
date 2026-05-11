@@ -1,6 +1,13 @@
 import { useState, useMemo } from 'react';
 import { Book, Plus, Trash2, RefreshCw, CheckCircle, Circle, Edit3, X, Save } from 'lucide-react';
 
+const getLocalISODate = (date = new Date()) => {
+  const d = new Date(date);
+  const z = d.getTimezoneOffset() * 60 * 1000;
+  const localDate = new Date(d.getTime() - z);
+  return localDate.toISOString().split('T')[0];
+};
+
 function VocabularyView({ vocabulary, onAddWord, onDeleteWord, onEditWord, isRoutineEnabled, onToggleRoutine, busy }) {
   const lang = localStorage.getItem('digital-curator-lang') || 'tr';
   const isTr = lang === 'tr';
@@ -66,8 +73,8 @@ function VocabularyView({ vocabulary, onAddWord, onDeleteWord, onEditWord, isRou
   };
 
   const wordsAddedToday = useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
-    return vocabulary.filter(v => v.created_at && v.created_at.startsWith(today)).length;
+    const today = getLocalISODate();
+    return vocabulary.filter(v => v.created_at && getLocalISODate(v.created_at) === today).length;
   }, [vocabulary]);
 
   return (
