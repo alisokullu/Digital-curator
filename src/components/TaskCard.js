@@ -1,7 +1,13 @@
 import { useState, useEffect } from 'react';
 import { formatDateTime } from '../utils/formatters';
 import { isTr } from '../utils/i18n';
-import { Repeat, Settings2, Clock, Save, X, ChevronRight, ChevronLeft, Edit, Trash2, Calendar, AlertCircle, ListTodo, Plus, CheckSquare, Square, Wand2 } from 'lucide-react';
+import { Repeat, Settings2, Clock, X, Edit, Trash2, Calendar, AlertCircle, ListTodo, Plus, CheckSquare, Square, Wand2 } from 'lucide-react';
+
+const formatDateForInput = (dateString) => {
+  if (!dateString) return '';
+  const d = new Date(dateString);
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+};
 
 function TaskCard({
   editingDraft,
@@ -24,12 +30,6 @@ function TaskCard({
   const [tempDuration, setTempDuration] = useState(task.duration_total || 0);
   const [tempSubTasks, setTempSubTasks] = useState(task.sub_tasks || []);
   const [newSubTaskTitle, setNewSubTaskTitle] = useState('');
-  const formatDateForInput = (dateString) => {
-    if (!dateString) return '';
-    const d = new Date(dateString);
-    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-  };
-
   const [tempDueDate, setTempDueDate] = useState(formatDateForInput(task.due_date));
   const [localProgress, setLocalProgress] = useState(task.duration_progress || 0);
 
@@ -37,6 +37,20 @@ function TaskCard({
   useEffect(() => {
     setLocalProgress(task.duration_progress || 0);
   }, [task.duration_progress]);
+
+  useEffect(() => {
+    if (isCustomizing) return;
+    setTempDuration(task.duration_total || 0);
+    setTempSubTasks(task.sub_tasks || []);
+    setTempDueDate(formatDateForInput(task.due_date));
+  }, [isCustomizing, task.duration_total, task.sub_tasks, task.due_date]);
+
+  const handleOpenCustomizer = () => {
+    setTempDuration(task.duration_total || 0);
+    setTempSubTasks(task.sub_tasks || []);
+    setTempDueDate(formatDateForInput(task.due_date));
+    setIsCustomizing(true);
+  };
 
   const handleKeyDown = (event) => {
     if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
@@ -77,7 +91,7 @@ function TaskCard({
   };
   
   const handleToggleSubTask = (id) => {
-    const nextSubTasks = task.sub_tasks.map(s => 
+    const nextSubTasks = (task.sub_tasks || []).map(s => 
       s.id === id ? { ...s, is_completed: !s.is_completed } : s
     );
     onUpdateSubTasks(task.id, nextSubTasks);
@@ -325,7 +339,7 @@ function TaskCard({
             <Edit size={16} />
             <span>{isTr ? 'Düzenle' : 'Edit'}</span>
           </button>
-          <button className="button button-secondary" onClick={() => setIsCustomizing(true)} title={isTr ? 'Özelleştir' : 'Customize'} type="button">
+          <button className="button button-secondary" onClick={handleOpenCustomizer} title={isTr ? 'Özelleştir' : 'Customize'} type="button">
             <Settings2 size={16} />
             <span>{isTr ? 'Özelleştir' : 'Customize'}</span>
           </button>

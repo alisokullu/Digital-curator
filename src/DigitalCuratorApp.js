@@ -725,26 +725,65 @@ function DigitalCuratorApp() {
 
   const handleUpdateTaskDuration = async (taskId, total) => {
     const nextUpdatedAt = stamp();
-    await runMutation(
+    let previousTask = null;
+    setAllTasks((current) =>
+      current.map((task) => {
+        if (task.id !== taskId) return task;
+        previousTask = task;
+        return { ...task, duration_total: total, updated_at: nextUpdatedAt };
+      })
+    );
+
+    const result = await runMutation(
       () => supabase.from('tasks').update({ duration_total: total, updated_at: nextUpdatedAt }).eq('id', taskId),
       isTr ? 'Görev süresi güncellendi.' : 'Task duration updated.'
     );
+
+    if (!result && previousTask) {
+      setAllTasks((current) => current.map((task) => (task.id === taskId ? previousTask : task)));
+    }
   };
 
   const handleUpdateTaskDueDate = async (taskId, dueDate) => {
     const nextUpdatedAt = stamp();
-    await runMutation(
+    let previousTask = null;
+    setAllTasks((current) =>
+      current.map((task) => {
+        if (task.id !== taskId) return task;
+        previousTask = task;
+        return { ...task, due_date: dueDate || null, updated_at: nextUpdatedAt };
+      })
+    );
+
+    const result = await runMutation(
       () => supabase.from('tasks').update({ due_date: dueDate || null, updated_at: nextUpdatedAt }).eq('id', taskId),
       isTr ? 'Son tarih güncellendi.' : 'Due date updated.'
     );
+
+    if (!result && previousTask) {
+      setAllTasks((current) => current.map((task) => (task.id === taskId ? previousTask : task)));
+    }
   };
   
   const handleUpdateSubTasks = async (taskId, subTasks) => {
     const nextUpdatedAt = stamp();
-    await runMutation(
+    let previousTask = null;
+    setAllTasks((current) =>
+      current.map((task) => {
+        if (task.id !== taskId) return task;
+        previousTask = task;
+        return { ...task, sub_tasks: subTasks, updated_at: nextUpdatedAt };
+      })
+    );
+
+    const result = await runMutation(
       () => supabase.from('tasks').update({ sub_tasks: subTasks, updated_at: nextUpdatedAt }).eq('id', taskId),
       null
     );
+
+    if (!result && previousTask) {
+      setAllTasks((current) => current.map((task) => (task.id === taskId ? previousTask : task)));
+    }
   };
   
   const handleUpdateTaskProgress = async (taskId, progress, isCompleted = false) => {
@@ -757,10 +796,23 @@ function DigitalCuratorApp() {
       payload.is_completed = true;
     }
     
-    await runMutation(
+    let previousTask = null;
+    setAllTasks((current) =>
+      current.map((task) => {
+        if (task.id !== taskId) return task;
+        previousTask = task;
+        return { ...task, ...payload };
+      })
+    );
+
+    const result = await runMutation(
       () => supabase.from('tasks').update(payload).eq('id', taskId),
       isCompleted ? (isTr ? 'Harika! Görev tamamlandı.' : 'Great! Task completed.') : null
     );
+
+    if (!result && previousTask) {
+      setAllTasks((current) => current.map((task) => (task.id === taskId ? previousTask : task)));
+    }
   };
   
   const handleSaveNote = async (noteId, draft) => {
