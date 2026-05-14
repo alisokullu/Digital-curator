@@ -62,18 +62,125 @@ create table if not exists public.vocabulary (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.user_roles (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  role text not null default 'user' check (role in ('admin', 'user')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.user_roles
+    where user_id = auth.uid()
+      and role = 'admin'
+  );
+$$;
+
+create or replace function public.get_admin_overview()
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  checked_table_count integer := 6;
+begin
+  if not public.is_admin() then
+    raise exception 'not authorized' using errcode = '42501';
+  end if;
+
+  return jsonb_build_object(
+    'totals', jsonb_build_object(
+      'users', (select count(*) from auth.users),
+      'folders', (select count(*) from public.folders),
+      'tasks', (select count(*) from public.tasks),
+      'notes', (select count(*) from public.notes),
+      'words', (select count(*) from public.vocabulary)
+    ),
+    'recent_records', (
+      select coalesce(jsonb_agg(to_jsonb(records)), '[]'::jsonb)
+      from (
+        select 'task' as type, id, user_id, title, null::text as english, created_at
+        from public.tasks
+        union all
+        select 'note' as type, id, user_id, coalesce(title, 'Untitled note') as title, null::text as english, created_at
+        from public.notes
+        union all
+        select 'word' as type, id, user_id, null::text as title, english, created_at
+        from public.vocabulary
+        order by created_at desc
+        limit 10
+      ) records
+    ),
+    'health', jsonb_build_object(
+      'checked_tables', checked_table_count,
+      'rls_enabled_tables', (
+        select count(*)
+        from pg_tables
+        where schemaname = 'public'
+          and tablename in ('folders', 'tasks', 'notes', 'task_history', 'vocabulary', 'user_roles')
+          and rowsecurity = true
+      ),
+      'rows_missing_user_id', (
+        select sum(missing_count)
+        from (
+          select count(*) filter (where user_id is null) as missing_count from public.folders
+          union all select count(*) filter (where user_id is null) from public.tasks
+          union all select count(*) filter (where user_id is null) from public.notes
+          union all select count(*) filter (where user_id is null) from public.task_history
+          union all select count(*) filter (where user_id is null) from public.vocabulary
+        ) missing
+      ),
+      'users_without_role', (
+        select count(*)
+        from auth.users users
+        left join public.user_roles roles on roles.user_id = users.id
+        where roles.user_id is null
+      ),
+      'admin_roles', (
+        select count(*)
+        from public.user_roles
+        where role = 'admin'
+      )
+    )
+  );
+end;
+$$;
+
 grant usage on schema public to authenticated, service_role;
 grant select, insert, update, delete on public.folders to authenticated, service_role;
 grant select, insert, update, delete on public.tasks to authenticated, service_role;
 grant select, insert, update, delete on public.notes to authenticated, service_role;
 grant select, insert, update, delete on public.task_history to authenticated, service_role;
 grant select, insert, update, delete on public.vocabulary to authenticated, service_role;
+grant select on public.user_roles to authenticated, service_role;
+grant insert, update, delete on public.user_roles to service_role;
+revoke execute on function public.is_admin() from public;
+revoke execute on function public.get_admin_overview() from public;
+grant execute on function public.is_admin() to authenticated, service_role;
+grant execute on function public.get_admin_overview() to authenticated, service_role;
 
 alter table public.folders enable row level security;
 alter table public.tasks enable row level security;
 alter table public.notes enable row level security;
 alter table public.task_history enable row level security;
 alter table public.vocabulary enable row level security;
+alter table public.user_roles enable row level security;
+
+drop policy if exists "user_roles_select_self_or_admin" on public.user_roles;
+
+create policy "user_roles_select_self_or_admin"
+  on public.user_roles for select
+  using (auth.uid() = user_id or public.is_admin());
 
 drop policy if exists "folders_select_own" on public.folders;
 drop policy if exists "folders_insert_own" on public.folders;

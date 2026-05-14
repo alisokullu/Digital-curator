@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckSquare, Archive as ArchiveIcon, Activity, Plus, Folder, Briefcase, Calendar, Globe, Trash2, Edit3, Check, X, FileText, Book } from 'lucide-react';
+import { CheckSquare, Archive as ArchiveIcon, Activity, Plus, Folder, Briefcase, Calendar, Globe, Trash2, Edit3, Check, X, FileText, Book, ShieldCheck } from 'lucide-react';
 
 const NAV_ITEMS = [
   { id: 'tasks', label: 'Görevler', enLabel: 'Tasks', icon: CheckSquare },
@@ -8,6 +8,8 @@ const NAV_ITEMS = [
   { id: 'insights', label: 'İstatistikler', enLabel: 'Insights', icon: Activity },
   { id: 'archive', label: 'Arşiv', enLabel: 'Archive', icon: ArchiveIcon },
 ];
+
+const ADMIN_NAV_ITEM = { id: 'admin', label: 'Admin', enLabel: 'Admin', icon: ShieldCheck };
 
 const getFolderIcon = (name) => {
   const n = (name || '').trim().toLowerCase();
@@ -38,6 +40,7 @@ function Sidebar({
   view,
   onSignOut,
   onRenameFolder,
+  isAdmin = false,
 }) {
   const [renamingId, setRenamingId] = useState(null);
   const [renamingValue, setRenamingValue] = useState('');
@@ -76,7 +79,7 @@ function Sidebar({
       </div>
 
       <nav className="nav-cluster">
-        {NAV_ITEMS.map((item) => {
+        {[...NAV_ITEMS, ...(isAdmin ? [ADMIN_NAV_ITEM] : [])].map((item) => {
           const Icon = item.icon;
           return (
             <button

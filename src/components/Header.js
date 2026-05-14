@@ -2,21 +2,33 @@ import { isTr } from '../utils/i18n';
 
 function Header({ activeFolder, onMenuOpen, onSearchChange, searchTerm, stats, view }) {
   const titleMap = {
-    tasks: activeFolder?.name || (isTr ? 'Görev koleksiyonları' : 'Task collections'),
-    insights: isTr ? 'İstatistikler' : 'Insights',
-    archive: isTr ? 'Arşiv' : 'Archive',
+    tasks: activeFolder?.name || (isTr ? 'Gorev koleksiyonlari' : 'Task collections'),
+    notes: isTr ? 'Notlar' : 'Notes',
+    vocabulary: isTr ? 'Kelimeler' : 'Vocabulary',
+    insights: isTr ? 'Istatistikler' : 'Insights',
+    archive: isTr ? 'Arsiv' : 'Archive',
+    admin: isTr ? 'Admin Paneli' : 'Admin Panel',
   };
 
   const subtitleMap = {
-    tasks: isTr 
-      ? `${stats.byFolder.length} klasörde ${stats.active} aktif görev.`
+    tasks: isTr
+      ? `${stats.byFolder.length} klasorde ${stats.active} aktif gorev.`
       : `${stats.active} active tasks across ${stats.byFolder.length} folders.`,
+    notes: isTr
+      ? 'Notlariniz ve fikirleriniz tek yerde.'
+      : 'Your notes and ideas in one place.',
+    vocabulary: isTr
+      ? 'Kelime kartlariniz ve gunluk rutininiz.'
+      : 'Your word cards and daily routine.',
     insights: isTr
-      ? `Aktif panonuz genelinde %${stats.completionRate} tamamlama oranı.`
+      ? `Aktif panonuz genelinde %${stats.completionRate} tamamlama orani.`
       : `${stats.completionRate}% completion rate across your active board.`,
     archive: isTr
-      ? `Arşivde bekleyen ${stats.archived} öğe.`
+      ? `Arsivde bekleyen ${stats.archived} oge.`
       : `${stats.archived} items waiting in the archive.`,
+    admin: isTr
+      ? 'Sistem geneli metrikler ve veri sagligi.'
+      : 'System-wide metrics and data health.',
   };
 
   return (
@@ -43,9 +55,9 @@ function Header({ activeFolder, onMenuOpen, onSearchChange, searchTerm, stats, v
         </svg>
         <input
           onChange={(event) => onSearchChange(event.target.value)}
-          placeholder={view === 'archive' 
-            ? (isTr ? 'Arşivdeki görevleri ara' : 'Search archived tasks') 
-            : (isTr ? 'Görevleri ve notları ara' : 'Search tasks and notes')}
+          placeholder={view === 'archive'
+            ? (isTr ? 'Arsivdeki gorevleri ara' : 'Search archived tasks')
+            : (isTr ? 'Gorevleri ve notlari ara' : 'Search tasks and notes')}
           type="search"
           value={searchTerm}
         />

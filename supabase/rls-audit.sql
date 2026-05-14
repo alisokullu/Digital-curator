@@ -7,7 +7,7 @@ select
   rowsecurity as rls_enabled
 from pg_tables
 where schemaname = 'public'
-  and tablename in ('folders', 'tasks', 'notes', 'task_history', 'vocabulary')
+  and tablename in ('folders', 'tasks', 'notes', 'task_history', 'vocabulary', 'user_roles')
 order by tablename;
 
 select
@@ -19,7 +19,7 @@ select
   with_check
 from pg_policies
 where schemaname = 'public'
-  and tablename in ('folders', 'tasks', 'notes', 'task_history', 'vocabulary')
+  and tablename in ('folders', 'tasks', 'notes', 'task_history', 'vocabulary', 'user_roles')
 order by tablename, policyname;
 
 select
@@ -29,7 +29,7 @@ select
   string_agg(privilege_type, ', ' order by privilege_type) as privileges
 from information_schema.role_table_grants
 where table_schema = 'public'
-  and table_name in ('folders', 'tasks', 'notes', 'task_history', 'vocabulary')
+  and table_name in ('folders', 'tasks', 'notes', 'task_history', 'vocabulary', 'user_roles')
   and grantee in ('authenticated', 'service_role')
 group by table_schema, table_name, grantee
 order by table_name, grantee;
@@ -68,3 +68,10 @@ select
   count(user_id) as rows_with_user_id,
   count(*) - count(user_id) as rows_missing_user_id
 from public.vocabulary;
+
+select
+  'user_roles' as table_name,
+  count(*) as total_rows,
+  count(user_id) as rows_with_user_id,
+  count(*) - count(user_id) as rows_missing_user_id
+from public.user_roles;

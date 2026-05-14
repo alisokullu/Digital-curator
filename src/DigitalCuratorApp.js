@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { isTr } from './utils/i18n';
 import ArchiveView from './components/ArchiveView';
 import Header from './components/Header';
+import AdminView from './components/AdminView';
 import InsightsView from './components/InsightsView';
 import Sidebar from './components/Sidebar';
 import TaskComposer from './components/TaskComposer';
@@ -17,6 +18,7 @@ const VIEWS = {
   ARCHIVE: 'archive',
   NOTES: 'notes',
   VOCABULARY: 'vocabulary',
+  ADMIN: 'admin',
 };
 
 const THEME_KEY = 'digital-curator-theme';
@@ -58,6 +60,10 @@ function DigitalCuratorApp() {
   const [editingDraft, setEditingDraft] = useState({ title: '', description: '' });
   const [searchTerm, setSearchTerm] = useState('');
   const [session, setSession] = useState(null);
+  const [userRole, setUserRole] = useState('user');
+  const [adminOverview, setAdminOverview] = useState(null);
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [adminError, setAdminError] = useState('');
   const [history, setHistory] = useState([]);
   const [notes, setNotes] = useState([]);
   const [vocabulary, setVocabulary] = useState([]);
@@ -78,6 +84,66 @@ function DigitalCuratorApp() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const loadAdminOverview = useCallback(async () => {
+    if (!isSupabaseConfigured || !session) return;
+
+    setAdminLoading(true);
+    setAdminError('');
+
+    const { data, error: overviewError } = await supabase.rpc('get_admin_overview');
+
+    if (overviewError) {
+      setAdminError(formatError(overviewError, isTr ? 'Admin ozeti alinamadi.' : 'Admin overview could not be loaded.'));
+      setAdminOverview(null);
+    } else {
+      setAdminOverview(data || null);
+    }
+
+    setAdminLoading(false);
+  }, [session]);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured || !session) {
+      setUserRole('user');
+      setAdminOverview(null);
+      setAdminError('');
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    const loadRole = async () => {
+      const { data, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      if (roleError) {
+        setUserRole('user');
+        setAdminError(formatError(roleError, isTr ? 'Kullanici rolu okunamadi.' : 'User role could not be loaded.'));
+        return;
+      }
+
+      const nextRole = data?.role === 'admin' ? 'admin' : 'user';
+      setUserRole(nextRole);
+
+      if (nextRole === 'admin') {
+        loadAdminOverview();
+      } else if (view === VIEWS.ADMIN) {
+        setView(VIEWS.TASKS);
+      }
+    };
+
+    loadRole();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session, view, loadAdminOverview]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -110,7 +176,7 @@ function DigitalCuratorApp() {
       }
       setError('');
 
-      const [folderResponse, taskResponse, historyResponse, notesResponse] = await Promise.all([
+      const [folderResponse, taskResponse, historyResponse, notesResponse, vocabularyResponse] = await Promise.all([
         supabase.from('folders').select('*').order('created_at', { ascending: true }),
         supabase
           .from('tasks')
@@ -136,9 +202,12 @@ function DigitalCuratorApp() {
         return;
       }
 
-      if (folderResponse.error || taskResponse.error) {
+      if (folderResponse.error || taskResponse.error || historyResponse.error || notesResponse.error || vocabularyResponse.error) {
         setError(
-          formatError(folderResponse.error || taskResponse.error || historyResponse.error, 'Data could not be loaded from Supabase.')
+          formatError(
+            folderResponse.error || taskResponse.error || historyResponse.error || notesResponse.error || vocabularyResponse.error,
+            'Data could not be loaded from Supabase.'
+          )
         );
         setLoading(false);
         return;
@@ -148,8 +217,7 @@ function DigitalCuratorApp() {
       let nextTasks = taskResponse.data || [];
       let nextHistory = historyResponse.data || [];
       const nextNotes = notesResponse.data || [];
-      // we check for vocabulary error separately in case the table doesn't exist yet
-      const nextVocabulary = (arguments[0] && !arguments[0].error && folderResponse.data && taskResponse.data && historyResponse.data && notesResponse.data) ? (await supabase.from('vocabulary').select('*').order('created_at', { ascending: false })).data || [] : [];
+      const nextVocabulary = vocabularyResponse.data || [];
 
       nextHistory = nextHistory.map((item) => {
         if (
@@ -1006,6 +1074,17 @@ function DigitalCuratorApp() {
       );
     }
 
+    if (view === VIEWS.ADMIN && userRole === 'admin') {
+      return (
+        <AdminView
+          error={adminError}
+          loading={adminLoading}
+          onRefresh={loadAdminOverview}
+          overview={adminOverview}
+        />
+      );
+    }
+
     if (!isSupabaseConfigured) {
       return (
         <section className="setup-panel">
@@ -1103,6 +1182,7 @@ REACT_APP_SUPABASE_ANON_KEY=your-anon-key`}</pre>
           setIsSidebarOpen(false);
         }}
         onSignOut={() => supabase.auth.signOut()}
+        isAdmin={userRole === 'admin'}
         theme={theme}
         view={view}
       />
