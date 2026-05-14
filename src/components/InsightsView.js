@@ -1,5 +1,23 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
+import { Calendar, ChevronLeft, ChevronRight, List } from 'lucide-react';
 import { isTr } from '../utils/i18n';
+
+const locale = isTr ? 'tr-TR' : 'en-US';
+
+const getLocalISODate = (date = new Date()) => {
+  const d = new Date(date);
+  const z = d.getTimezoneOffset() * 60 * 1000;
+  const localDate = new Date(d.getTime() - z);
+  return localDate.toISOString().split('T')[0];
+};
+
+const parseLocalDate = (dateString) => new Date(`${dateString}T00:00:00`);
+
+const getProgress = (item) => (
+  item?.total_count ? Math.round((item.completed_count / item.total_count) * 100) : null
+);
+
+const formatPercent = (value) => (Number.isFinite(value) ? `${Math.round(value)}%` : '--');
 
 function StatCard({ label, value, tone = 'default', taskList = null }) {
   return (
@@ -19,14 +37,27 @@ function StatCard({ label, value, tone = 'default', taskList = null }) {
 }
 
 function InsightsView({ activeFolder, folders, stats, history = [] }) {
-  const [historyFilter, setHistoryFilter] = useState('all'); // 'all' or 'folder'
+  const [historyFilter, setHistoryFilter] = useState('all');
+  const [historyView, setHistoryView] = useState('flow');
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+  const [todayKey, setTodayKey] = useState(() => getLocalISODate());
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setTodayKey(getLocalISODate());
+    }, 60000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
 
   const filteredHistory = useMemo(() => {
     if (historyFilter === 'folder' && activeFolder) {
       return history.filter(h => h.folder_id === activeFolder.id);
     }
-    
-    // Aggregation for 'all' mode
+
     const groups = {};
     history.forEach(item => {
       const key = `${item.period_date}-${item.period_type}`;
@@ -46,20 +77,123 @@ function InsightsView({ activeFolder, folders, stats, history = [] }) {
         groups[key].tasks_snapshot.push(...item.tasks_snapshot);
       }
     });
-    
+
     return Object.values(groups).sort((a, b) => new Date(b.period_date) - new Date(a.period_date));
   }, [history, historyFilter, activeFolder]);
 
+  const liveTodayEntry = useMemo(() => {
+    const todayTasks = stats.activeTasksList.filter((task) => {
+      if (historyFilter === 'folder' && activeFolder) {
+        return task.folder_id === activeFolder.id;
+      }
+      return true;
+    });
+
+    if (!todayTasks.length) {
+      return null;
+    }
+
+    return {
+      period_date: todayKey,
+      period_type: 'daily',
+      completed_count: todayTasks.filter((task) => task.is_completed).length,
+      total_count: todayTasks.length,
+      tasks_snapshot: todayTasks.map((task) => ({
+        title: task.title,
+        is_completed: task.is_completed,
+        duration_total: task.duration_total || 0,
+        duration_progress: task.duration_progress || 0
+      })),
+      isLive: true
+    };
+  }, [stats.activeTasksList, historyFilter, activeFolder, todayKey]);
+
+  const calendarData = useMemo(() => {
+    const year = selectedMonth.getFullYear();
+    const month = selectedMonth.getMonth();
+    const dailyByDate = {};
+
+    filteredHistory
+      .filter((item) => item.period_type === 'daily')
+      .forEach((item) => {
+        const date = parseLocalDate(item.period_date);
+        if (date.getFullYear() !== year || date.getMonth() !== month) return;
+        dailyByDate[item.period_date] = item;
+      });
+
+    if (liveTodayEntry) {
+      const liveDate = parseLocalDate(liveTodayEntry.period_date);
+      if (liveDate.getFullYear() === year && liveDate.getMonth() === month) {
+        dailyByDate[todayKey] = liveTodayEntry;
+      }
+    }
+
+    const firstDay = new Date(year, month, 1);
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const mondayFirstOffset = (firstDay.getDay() + 6) % 7;
+    const cells = [];
+
+    for (let i = 0; i < mondayFirstOffset; i += 1) {
+      cells.push({ type: 'empty', key: `empty-start-${i}` });
+    }
+
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      const date = new Date(year, month, day);
+      const key = getLocalISODate(date);
+      const entry = dailyByDate[key] || null;
+      const progress = getProgress(entry);
+      cells.push({
+        type: 'day',
+        key,
+        day,
+        date,
+        entry,
+        progress,
+        isToday: key === todayKey
+      });
+    }
+
+    const dailyValues = Object.values(dailyByDate)
+      .map(getProgress)
+      .filter((value) => value !== null);
+    const weeklyValues = filteredHistory
+      .filter((item) => {
+        if (item.period_type !== 'weekly') return false;
+        const date = parseLocalDate(item.period_date);
+        return date.getFullYear() === year && date.getMonth() === month;
+      })
+      .map(getProgress)
+      .filter((value) => value !== null);
+
+    const average = (values) => (
+      values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null
+    );
+
+    return {
+      cells,
+      dailyAverage: average(dailyValues),
+      weeklyAverage: average(weeklyValues),
+      hasEntries: dailyValues.length > 0 || weeklyValues.length > 0
+    };
+  }, [filteredHistory, liveTodayEntry, selectedMonth, todayKey]);
+
   const getPeriodLabel = (type, date) => {
-    const d = new Date(date);
+    const d = parseLocalDate(date);
     const options = { day: 'numeric', month: 'long' };
-    const dateStr = d.toLocaleDateString(isTr ? 'tr-TR' : 'en-US', options);
+    const dateStr = d.toLocaleDateString(locale, options);
 
     if (type === 'daily') return isTr ? `Günlük (${dateStr})` : `Daily (${dateStr})`;
     if (type === 'weekly') return isTr ? `Haftalık (${dateStr})` : `Weekly (${dateStr})`;
-    if (type === 'monthly') return isTr ? `Aylık (${d.toLocaleDateString(isTr ? 'tr-TR' : 'en-US', { month: 'long', year: 'numeric' })})` : `Monthly (${d.toLocaleDateString(isTr ? 'tr-TR' : 'en-US', { month: 'long', year: 'numeric' })})`;
+    if (type === 'monthly') return isTr ? `Aylık (${d.toLocaleDateString(locale, { month: 'long', year: 'numeric' })})` : `Monthly (${d.toLocaleDateString(locale, { month: 'long', year: 'numeric' })})`;
     return dateStr;
   };
+
+  const shiftMonth = (amount) => {
+    setSelectedMonth((current) => new Date(current.getFullYear(), current.getMonth() + amount, 1));
+  };
+
+  const monthLabel = selectedMonth.toLocaleDateString(locale, { month: 'long', year: 'numeric' });
+  const weekDays = isTr ? ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'] : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   return (
     <section className="insights-view">
@@ -143,70 +277,177 @@ function InsightsView({ activeFolder, folders, stats, history = [] }) {
       </div>
 
       <article className="panel-card history-panel">
-        <div className="section-header">
+        <div className="section-header history-header">
           <div>
             <span className="eyebrow">{isTr ? 'Performans Akışı' : 'Performance Flow'}</span>
             <h2>{isTr ? 'Görev Geçmişi' : 'Task History'}</h2>
           </div>
-          <div className="filter-tabs">
-            <button 
-              className={historyFilter === 'all' ? 'active' : ''} 
-              onClick={() => setHistoryFilter('all')}
-            >
-              {isTr ? 'Hepsi' : 'All'}
-            </button>
-            <button 
-              className={historyFilter === 'folder' ? 'active' : ''} 
-              onClick={() => setHistoryFilter('folder')}
-              disabled={!activeFolder}
-            >
-              {isTr ? 'Mevcut Klasör' : 'Current Folder'}
-            </button>
+          <div className="history-controls">
+            <div className="filter-tabs">
+              <button
+                className={historyFilter === 'all' ? 'active' : ''}
+                onClick={() => setHistoryFilter('all')}
+              >
+                {isTr ? 'Hepsi' : 'All'}
+              </button>
+              <button
+                className={historyFilter === 'folder' ? 'active' : ''}
+                onClick={() => setHistoryFilter('folder')}
+                disabled={!activeFolder}
+              >
+                {isTr ? 'Mevcut Klasör' : 'Current Folder'}
+              </button>
+            </div>
+            <div className="view-tabs" aria-label={isTr ? 'Geçmiş görünümü' : 'History view'}>
+              <button
+                aria-label={isTr ? 'Liste görünümü' : 'List view'}
+                className={historyView === 'flow' ? 'active' : ''}
+                onClick={() => setHistoryView('flow')}
+                title={isTr ? 'Liste' : 'List'}
+                type="button"
+              >
+                <List size={16} />
+              </button>
+              <button
+                aria-label={isTr ? 'Takvim görünümü' : 'Calendar view'}
+                className={historyView === 'calendar' ? 'active' : ''}
+                onClick={() => setHistoryView('calendar')}
+                title={isTr ? 'Takvim' : 'Calendar'}
+                type="button"
+              >
+                <Calendar size={16} />
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className="history-flow">
-          {filteredHistory.length > 0 ? (
-            filteredHistory.map((item, index) => {
-              const progress = item.total_count ? Math.round((item.completed_count / item.total_count) * 100) : 0;
-              return (
-                <div className="history-item" key={`${item.period_date}-${item.period_type}-${index}`} style={{ '--delay': `${index * 0.05}s` }}>
-                  <div className="history-info">
-                    <span className="history-date">{getPeriodLabel(item.period_type, item.period_date)}</span>
-                    <span className="history-stats">
-                      {item.completed_count} / {item.total_count} {isTr ? 'Tamamlandı' : 'Completed'}
-                    </span>
-                    {item.tasks_snapshot && item.tasks_snapshot.length > 0 && (
-                      <div className="history-tasks-preview">
-                        {item.tasks_snapshot.map((task, i) => (
-                          <span 
-                            key={i} 
-                            className={`history-task-tag ${task.is_completed ? 'task-done' : 'task-open'}`}
-                          >
-                            {task.title}
-                            {task.duration_total > 0 && ` (${task.duration_progress}/${task.duration_total} ${isTr ? 'dk' : 'min'})`}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div className="history-progress">
-                    <div className="progress-track">
-                      <span style={{ width: `${progress}%` }} className={progress === 100 ? 'complete' : ''} />
+        {historyView === 'flow' ? (
+          <div className="history-flow">
+            {filteredHistory.length > 0 ? (
+              filteredHistory.map((item, index) => {
+                const progress = getProgress(item) || 0;
+                return (
+                  <div className="history-item" key={`${item.period_date}-${item.period_type}-${index}`} style={{ '--delay': `${index * 0.05}s` }}>
+                    <div className="history-info">
+                      <span className="history-date">{getPeriodLabel(item.period_type, item.period_date)}</span>
+                      <span className="history-stats">
+                        {item.completed_count} / {item.total_count} {isTr ? 'Tamamlandı' : 'Completed'}
+                      </span>
+                      {item.tasks_snapshot && item.tasks_snapshot.length > 0 && (
+                        <div className="history-tasks-preview">
+                          {item.tasks_snapshot.map((task, i) => (
+                            <span
+                              key={i}
+                              className={`history-task-tag ${task.is_completed ? 'task-done' : 'task-open'}`}
+                            >
+                              {task.title}
+                              {task.duration_total > 0 && ` (${task.duration_progress}/${task.duration_total} ${isTr ? 'dk' : 'min'})`}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <span className="progress-pct">{progress}%</span>
+                    <div className="history-progress">
+                      <div className="progress-track">
+                        <span style={{ width: `${progress}%` }} className={progress === 100 ? 'complete' : ''} />
+                      </div>
+                      <span className="progress-pct">{progress}%</span>
+                    </div>
                   </div>
-                </div>
-              );
-            })
-          ) : (
-            <p className="empty-copy">
-              {isTr 
-                ? 'Henüz geçmiş verisi yok. Periyotlar tamamlandıkça burada görünecektir.' 
-                : 'No history data yet. It will appear here as periods complete.'}
-            </p>
-          )}
-        </div>
+                );
+              })
+            ) : (
+              <p className="empty-copy">
+                {isTr
+                  ? 'Henüz geçmiş verisi yok. Periyotlar tamamlandıkça burada görünecektir.'
+                  : 'No history data yet. It will appear here as periods complete.'}
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="history-calendar-view">
+            <div className="calendar-toolbar">
+              <button aria-label={isTr ? 'Önceki ay' : 'Previous month'} className="calendar-nav-btn" onClick={() => shiftMonth(-1)} type="button">
+                <ChevronLeft size={18} />
+              </button>
+              <strong>{monthLabel}</strong>
+              <button aria-label={isTr ? 'Sonraki ay' : 'Next month'} className="calendar-nav-btn" onClick={() => shiftMonth(1)} type="button">
+                <ChevronRight size={18} />
+              </button>
+            </div>
+
+            <div className="calendar-summary">
+              <article>
+                <span>{isTr ? 'Günlük Ortalama' : 'Daily Average'}</span>
+                <strong>{formatPercent(calendarData.dailyAverage)}</strong>
+              </article>
+              <article>
+                <span>{isTr ? 'Haftalık Ortalama' : 'Weekly Average'}</span>
+                <strong>{formatPercent(calendarData.weeklyAverage)}</strong>
+              </article>
+              <article>
+                <span>{isTr ? 'Canlı Bugün' : 'Live Today'}</span>
+                <strong>{liveTodayEntry ? formatPercent(getProgress(liveTodayEntry)) : '--'}</strong>
+              </article>
+            </div>
+
+            <div className="performance-calendar">
+              {weekDays.map((day) => (
+                <span className="calendar-weekday" key={day}>{day}</span>
+              ))}
+              {calendarData.cells.map((cell) => {
+                if (cell.type === 'empty') {
+                  return <span className="calendar-empty-cell" key={cell.key} />;
+                }
+
+                const progress = cell.progress || 0;
+                const hasData = Boolean(cell.entry);
+                const tooltipTasks = cell.entry?.tasks_snapshot?.slice(0, 5) || [];
+
+                return (
+                  <div
+                    className={`calendar-day ${hasData ? 'has-data' : 'no-data'} ${cell.isToday ? 'today' : ''}`}
+                    key={cell.key}
+                    style={{ '--progress': `${progress * 3.6}deg` }}
+                  >
+                    <div className="calendar-day-ring">
+                      <span>{cell.day}</span>
+                    </div>
+                    <div className="calendar-day-tooltip">
+                      <strong>{cell.date.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })}</strong>
+                      {hasData ? (
+                        <>
+                          <span>{progress}%</span>
+                          <p>{cell.entry.completed_count} / {cell.entry.total_count} {isTr ? 'tamamlandı' : 'completed'}</p>
+                          {cell.entry.isLive && <em>{isTr ? 'Canlı gün' : 'Live day'}</em>}
+                          {tooltipTasks.length > 0 && (
+                            <div className="calendar-tooltip-tasks">
+                              {tooltipTasks.map((task, index) => (
+                                <small className={task.is_completed ? 'task-done' : 'task-open'} key={`${task.title}-${index}`}>
+                                  {task.title}
+                                </small>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <p>{isTr ? 'Veri yok' : 'No data'}</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {!calendarData.hasEntries && (
+              <p className="empty-copy calendar-empty-copy">
+                {isTr
+                  ? 'Bu ay için henüz günlük veya haftalık performans verisi yok.'
+                  : 'No daily or weekly performance data for this month yet.'}
+              </p>
+            )}
+          </div>
+        )}
       </article>
     </section>
   );
