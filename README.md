@@ -59,7 +59,7 @@ Digital Curator helps users organize tasks, notes, recurring routines, archive i
 
 ## Supabase Setup
 
-For a new Supabase project, run [supabase/schema.sql](supabase/schema.sql) in the Supabase SQL Editor. It creates the required `folders`, `tasks`, `notes`, and `task_history` tables, enables RLS, and adds `auth.uid() = user_id` policies so users can only read and write their own records.
+For a new Supabase project, run [supabase/schema.sql](supabase/schema.sql) in the Supabase SQL Editor. It creates the required `folders`, `tasks`, `notes`, `task_history`, and `vocabulary` tables, grants Data API access to the `authenticated` and `service_role` roles, enables RLS, and adds `auth.uid() = user_id` policies so users can only read and write their own records.
 
 For an existing production project with real data, do not run the full schema file blindly. First run [supabase/rls-audit.sql](supabase/rls-audit.sql), which only reads metadata and row counts. Confirm that every table has `user_id`, RLS is enabled, and policies already match the expected ownership model before making any changes.
 
@@ -71,6 +71,7 @@ The app listens for realtime changes on:
 - `tasks`
 - `notes`
 - `task_history`
+- `vocabulary`
 
 ## Netlify Setup
 

@@ -51,10 +51,29 @@ create table if not exists public.task_history (
   unique (user_id, folder_id, period_date, period_type)
 );
 
+create table if not exists public.vocabulary (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  english text not null,
+  turkish text not null,
+  meaning text,
+  example text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+grant usage on schema public to authenticated, service_role;
+grant select, insert, update, delete on public.folders to authenticated, service_role;
+grant select, insert, update, delete on public.tasks to authenticated, service_role;
+grant select, insert, update, delete on public.notes to authenticated, service_role;
+grant select, insert, update, delete on public.task_history to authenticated, service_role;
+grant select, insert, update, delete on public.vocabulary to authenticated, service_role;
+
 alter table public.folders enable row level security;
 alter table public.tasks enable row level security;
 alter table public.notes enable row level security;
 alter table public.task_history enable row level security;
+alter table public.vocabulary enable row level security;
 
 drop policy if exists "folders_select_own" on public.folders;
 drop policy if exists "folders_insert_own" on public.folders;
@@ -158,6 +177,28 @@ create policy "task_history_delete_own"
   on public.task_history for delete
   using (auth.uid() = user_id);
 
+drop policy if exists "vocabulary_select_own" on public.vocabulary;
+drop policy if exists "vocabulary_insert_own" on public.vocabulary;
+drop policy if exists "vocabulary_update_own" on public.vocabulary;
+drop policy if exists "vocabulary_delete_own" on public.vocabulary;
+
+create policy "vocabulary_select_own"
+  on public.vocabulary for select
+  using (auth.uid() = user_id);
+
+create policy "vocabulary_insert_own"
+  on public.vocabulary for insert
+  with check (auth.uid() = user_id);
+
+create policy "vocabulary_update_own"
+  on public.vocabulary for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+create policy "vocabulary_delete_own"
+  on public.vocabulary for delete
+  using (auth.uid() = user_id);
+
 do $$
 begin
   if not exists (
@@ -186,5 +227,12 @@ begin
     where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'task_history'
   ) then
     alter publication supabase_realtime add table public.task_history;
+  end if;
+
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'vocabulary'
+  ) then
+    alter publication supabase_realtime add table public.vocabulary;
   end if;
 end $$;
