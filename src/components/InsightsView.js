@@ -83,6 +83,9 @@ function InsightsView({ activeFolder, folders, stats, history = [] }) {
 
   const liveTodayEntry = useMemo(() => {
     const todayTasks = stats.activeTasksList.filter((task) => {
+      if (task.recurrence !== 'daily') {
+        return false;
+      }
       if (historyFilter === 'folder' && activeFolder) {
         return task.folder_id === activeFolder.id;
       }
